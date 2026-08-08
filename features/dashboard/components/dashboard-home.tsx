@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "../actions/use-dashboard";
+import type { DashboardData } from "../actions/dashboard.service";
 import { StatCard } from "./stat-card";
 
 const container = {
@@ -163,7 +164,7 @@ export function DashboardHome() {
                   </Button>
                 </div>
               ) : (
-                data?.activeGoals.map((goal) => (
+                data?.activeGoals.map((goal: DashboardData["activeGoals"][number]) => (
                   <div key={goal.id} className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium">{goal.title}</span>
@@ -202,7 +203,7 @@ export function DashboardHome() {
                   Nothing due soon. Nice.
                 </p>
               ) : (
-                data?.upcomingDeadlines.map((goal) => (
+                data?.upcomingDeadlines.map((goal: DashboardData["upcomingDeadlines"][number]) => (
                   <div key={goal.id} className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm">{goal.title}</span>
                     <Badge
@@ -318,7 +319,7 @@ export function DashboardHome() {
                 </p>
               ) : (
                 <ul className="space-y-3">
-                  {data?.recentActivities.map((a) => (
+                  {data?.recentActivities.map((a: DashboardData["recentActivities"][number]) => (
                     <li key={a.id} className="flex items-start justify-between gap-2 text-sm">
                       <span className="text-muted-foreground">
                         {a.action.replaceAll("_", " ").toLowerCase()}

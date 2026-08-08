@@ -25,7 +25,7 @@ function isAuthenticated(request: NextRequest): boolean {
   return Number.isFinite(expiresAt) && expiresAt > Date.now();
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authed = isAuthenticated(request);
 

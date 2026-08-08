@@ -59,7 +59,7 @@ export function GoalList({
               </TableCell>
               <TableCell>
                 <Badge variant="secondary" className="text-xs">
-                  {STATUS_LABEL[goal.status]}
+                  {STATUS_LABEL[goal.status as keyof typeof STATUS_LABEL]}
                 </Badge>
               </TableCell>
               <TableCell>
