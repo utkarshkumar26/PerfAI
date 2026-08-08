@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum GoalStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum OkrLevel {
+  COMPANY
+  TEAM
+  INDIVIDUAL
+}
+
+enum NotificationType {
+  GOAL_COMPLETED
+  WEEKLY_REMINDER
+  MONTHLY_REMINDER
+  DEADLINE_REMINDER
+  MANAGER_FEEDBACK
+  REVIEW_READY
+  GENERAL
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          Role      @default(EMPLOYEE)
+  avatarUrl     String?
+  designation   String?
+  experience    Int? // years
+  bio           String?
+  skills        String[]
+  education     String?
+  githubUrl     String?
+  linkedinUrl   String?
+  portfolioUrl  String?
+
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  managerId     String?
+  manager       User?     @relation("ManagerReports", fields: [managerId], references: [id], onDelete: SetNull)
+  reports       User[]    @relation("ManagerReports")
+
+  goals           Goal[]
+  assignedGoals   Goal[]        @relation("GoalAssignedBy")
+  reviews         Review[]
+  suggestions     CareerSuggestion[]
+  notifications   Notification[]
+  chatHistories   ChatHistory[]
+  activityLogs    ActivityLog[]
+  files           File[]
+  objectives      Objective[]
+  keyResults      KeyResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([departmentId])
+  @@index([managerId])
+}
+
+model Department {
+  id      String @id @default(uuid())
+  name    String @unique
+  users   User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  priority    Priority   @default(MEDIUM)
+  status      GoalStatus @default(TODO)
+  category    String?
+  dueDate     DateTime?
+  progress    Int        @default(0) // 0-100
+  notes       String?
+  approved    Boolean    @default(false)
+
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedById String?
+  assignedBy   User?  @relation("GoalAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([dueDate])
+}
+
+model Review {
+  id           String  @id @default(uuid())
+  period       String // e.g. "2026-W32" or "2026-08"
+  type         String  @default("MANUAL") // WEEKLY | MONTHLY | QUARTERLY | ANNUAL | MANUAL
+  input        Json // raw employee inputs
+  content      String // AI generated review
+  strengths    String[]
+  weaknesses   String[]
+  growthAreas  String[]
+  actionPlan   String?
+  rating       Float? // 1-5
+  aiGenerated  Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model CareerSuggestion {
+  id      String @id @default(uuid())
+  type    String // ROADMAP | SKILL_GAP | PROMOTION | LEARNING | SALARY | INTERVIEW
+  content Json
+  summary String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
+}
+
+model Objective {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  level       OkrLevel @default(INDIVIDUAL)
+  cycle       String // e.g. "2026-Q3"
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  parentId  String?
+  parent    Objective?  @relation("ObjectiveHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Objective[] @relation("ObjectiveHierarchy")
+
+  keyResults KeyResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, cycle])
+}
+
+model KeyResult {
+  id          String  @id @default(uuid())
+  title       String
+  target      Float
+  current     Float   @default(0)
+  unit        String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  objectiveId String
+  objective   Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([objectiveId])
+}
+
+model Notification {
+  id      String           @id @default(uuid())
+  type    NotificationType @default(GENERAL)
+  title   String
+  message String
+  read    Boolean          @default(false)
+  link    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+model ChatHistory {
+  id       String @id @default(uuid())
+  title    String?
+  messages Json // [{role, content, ts}]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ActivityLog {
+  id        String  @id @default(uuid())
+  action    String // e.g. "GOAL_CREATED", "REVIEW_GENERATED"
+  entity    String?
+  entityId  String?
+  metadata  Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model File {
+  id       String @id @default(uuid())
+  name     String
+  url      String
+  mimeType String?
+  size     Int?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
