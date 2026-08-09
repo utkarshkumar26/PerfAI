@@ -17,6 +17,8 @@ export const MANAGER_SUMMARY_SYSTEM = `You are an engineering manager assistant.
 
 export const CHAT_SYSTEM = `You are an AI career assistant embedded in a performance review platform. Help users with career guidance, resume feedback, goal suggestions, promotion tips, learning roadmaps and performance improvement. Be concise, practical and encouraging. Use markdown formatting.`;
 
+export const OKR_ADVICE_SYSTEM = `You are an OKR coach. Given an objective and its key results with current progress, return JSON: { "recommendations": string[] (exactly 3 concrete, actionable suggestions to stay on track), "health": "ON_TRACK"|"AT_RISK"|"OFF_TRACK" }`;
+
 export function reviewPrompt(input: Record<string, unknown>): string {
   return `Generate a performance review from the following self-reported data:\n\n${JSON.stringify(input, null, 2)}`;
 }
@@ -28,4 +30,26 @@ export function goalSuggestionsPrompt(input: {
   careerGoal: string;
 }): string {
   return `Suggest goals for this professional:\nRole: ${input.role}\nExperience: ${input.experience} years\nSkills: ${input.skills.join(", ")}\nCareer Goal: ${input.careerGoal}`;
+}
+
+/* ------------------------- Career prompts ------------------------- */
+
+export const CAREER_TEMPLATES: Record<string, string> = {
+  ROADMAP: `Generate a career roadmap. Respond with JSON: { "summary": string, "milestones": [{ "title": string, "timeframe": string, "details": string, "skillsToAcquire": string[] }], "immediateNextSteps": string[] }`,
+  SKILL_GAP: `Analyze the skill gap between the current and target role. Respond with JSON: { "summary": string, "gaps": [{ "skill": string, "importance": "HIGH"|"MEDIUM"|"LOW", "currentLevel": string, "targetLevel": string, "howToClose": string }], "strengthsToLeverage": string[] }`,
+  PROMOTION: `Assess promotion readiness. Respond with JSON: { "summary": string, "readinessScore": number (0-100), "readyFor": string, "gaps": string[], "evidenceToBuild": string[], "estimatedTimeline": string }`,
+  LEARNING: `Create a learning plan. Respond with JSON: { "summary": string, "weeklyPlan": string[], "monthlyPlan": string[], "quarterlyPlan": string[], "resources": [{ "title": string, "type": "COURSE"|"BOOK"|"CERTIFICATION"|"PRACTICE", "note": string }] }`,
+  SALARY: `Provide salary growth guidance (avoid claiming exact market data; give direction). Respond with JSON: { "summary": string, "levers": string[], "skillsThatRaiseComp": string[], "negotiationTips": string[], "timeline": string }`,
+  INTERVIEW: `Build an interview preparation plan. Respond with JSON: { "summary": string, "topics": string[], "likelyQuestions": string[], "practicePlan": string[], "resources": string[] }`,
+};
+
+export function careerPrompt(input: {
+  type: keyof typeof CAREER_TEMPLATES;
+  currentRole: string;
+  experience: number;
+  skills: string[];
+  targetRole?: string;
+  notes?: string;
+}): string {
+  return `Professional profile:\n- Current role: ${input.currentRole}\n- Experience: ${input.experience} years\n- Skills: ${input.skills.join(", ")}\n${input.targetRole ? `- Target role: ${input.targetRole}\n` : ""}${input.notes ? `- Notes: ${input.notes}\n` : ""}\n${CAREER_TEMPLATES[input.type]}`;
 }

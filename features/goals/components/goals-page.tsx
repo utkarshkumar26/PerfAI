@@ -59,6 +59,12 @@ export function GoalsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open("/api/export?entity=goals", "_blank")}
+          >
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={() => setAiOpen(true)}>
             <Sparkles /> AI Suggestions
           </Button>

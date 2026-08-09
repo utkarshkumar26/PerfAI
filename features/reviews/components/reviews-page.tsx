@@ -63,6 +63,12 @@ export function ReviewsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={() => window.open("/api/export?entity=reviews", "_blank")}
+          >
+            Export CSV
+          </Button>
           <Button onClick={() => setDrawerOpen(true)}>
             <Plus /> New review
           </Button>

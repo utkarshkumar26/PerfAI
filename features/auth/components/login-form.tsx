@@ -43,7 +43,10 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit((values) => login.mutate(values))}>
+        <form
+          noValidate
+          onSubmit={form.handleSubmit((values) => login.mutate(values))}
+        >
           <CardContent className="space-y-4">
             <FormField
               control={form.control}

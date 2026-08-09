@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +25,15 @@ export function Navbar() {
   const logout = useLogout();
   const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const { data: unread } = useQuery({
+    queryKey: ["notifications", "count"],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications/count");
+      const json = await res.json();
+      return json.success ? (json.data.count as number) : 0;
+    },
+    refetchInterval: 60_000,
+  });
 
   const initials = (user?.name ?? "?")
     .split(" ")
@@ -62,9 +72,15 @@ export function Navbar() {
           variant="ghost"
           size="icon"
           aria-label="Notifications"
+          className="relative"
           onClick={() => router.push("/notifications")}
         >
           <Bell className="h-4 w-4" />
+          {unread ? (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-medium text-destructive-foreground">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          ) : null}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-2" />}>
