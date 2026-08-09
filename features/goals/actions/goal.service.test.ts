@@ -36,9 +36,9 @@ const GOAL = {
   id: "goal-1",
   userId: "emp-1",
   assignedById: "mgr-1",
-  status: "IN_PROGRESS",
+  status: "IN_PROGRESS" as const,
   title: "Ship feature",
-} as never;
+};
 
 beforeEach(() => {
   jest.clearAllMocks();

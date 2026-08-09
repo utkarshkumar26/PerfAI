@@ -199,8 +199,8 @@ async function main() {
       title: "Lead QA Automation Initiative",
       description:
         "Design a scalable QA automation project structure, mentor engineers, and improve automation coverage using Playwright and AI-powered workflows.",
-      priority: "HIGH",
-      status: "IN_PROGRESS",
+      priority: "HIGH" as const,
+      status: "IN_PROGRESS" as const,
       category: "Engineering",
       dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
       progress: 72,
@@ -210,8 +210,8 @@ async function main() {
       title: "Enhance Meta Internal Tools",
       description:
         "Improve React and GraphQL-based internal enterprise applications by adding features, fixing bugs, and optimizing application stability.",
-      priority: "HIGH",
-      status: "IN_PROGRESS",
+      priority: "HIGH" as const,
+      status: "IN_PROGRESS" as const,
       category: "Product",
       dueDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000),
       progress: 68,
@@ -221,8 +221,8 @@ async function main() {
       title: "Ship AI Performance Review & Career Assistant",
       description:
         "Build an AI-powered performance review and career guidance platform using Next.js, TypeScript, Prisma, and Gemini integration.",
-      priority: "CRITICAL",
-      status: "COMPLETED",
+      priority: "CRITICAL" as const,
+      status: "COMPLETED" as const,
       category: "AI",
       dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       progress: 100,
@@ -232,8 +232,8 @@ async function main() {
       title: "Create MCQ Generator Platform",
       description:
         "Develop a Flask-based app for automated MCQ generation using NLP techniques and a responsive user interface.",
-      priority: "MEDIUM",
-      status: "COMPLETED",
+      priority: "MEDIUM" as const,
+      status: "COMPLETED" as const,
       category: "Learning",
       dueDate: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
       progress: 100,
@@ -243,14 +243,14 @@ async function main() {
       title: "Strengthen CI/CD and Backend Reliability",
       description:
         "Improve deployment, testing, and production debugging workflows by using CI/CD, Docker, AWS, and backend refactoring best practices.",
-      priority: "MEDIUM",
-      status: "TODO",
+      priority: "MEDIUM" as const,
+      status: "TODO" as const,
       category: "Process",
       dueDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
       progress: 20,
       approved: false,
     },
-  ];
+  ] as const;
 
   for (const goal of utkarshGoals) {
     await prisma.goal.create({
@@ -326,7 +326,7 @@ async function main() {
       },
       {
         userId: utkarsh.id,
-        type: "CAREER_SUGGESTION",
+        type: "GENERAL",
         title: "Career path update",
         message: "Explore AI automation and architecture opportunities aligned with your profile.",
         link: "/career",
