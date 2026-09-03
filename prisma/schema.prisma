@@ -147,6 +147,14 @@ model Review {
   actionPlan   String?
   rating       Float? // 1-5
   aiGenerated  Boolean @default(false)
+  status       String  @default("DRAFT") // DRAFT | PENDING | APPROVED | REJECTED | MODIFICATION_REQUIRED
+  submittedAt  DateTime?
+  comments     Json?
+  annualPerformance       String?
+  overallPerformanceFeedback String?
+  finalAppraisal           String?
+  incrementEligibility     String?
+  performanceEligibility  String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -155,6 +163,7 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 model CareerSuggestion {

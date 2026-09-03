@@ -11,25 +11,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useReviews } from "../actions/use-reviews";
+import { useReview, useReviews } from "../actions/use-reviews";
 import { ReviewFormDrawer } from "./review-form";
-
-const TYPES = ["WEEKLY", "MONTHLY", "QUARTERLY", "ANNUAL", "MANUAL"] as const;
+import { useSession } from "@/features/auth/actions/use-auth";
+import { useManagerReviews } from "../actions/use-reviews";
 
 export function ReviewsPage() {
+  const { data: user } = useSession();
+  const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
+  if (isManager) return <ManagerReviewsPage />;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const type = searchParams.get("type") ?? undefined;
+  const editId = searchParams.get("edit") ?? "";
 
-  const { data: reviews, isLoading } = useReviews({ type });
+  const { data: reviews, isLoading } = useReviews({ type: undefined });
+  const { data: editReview } = useReview(editId);
   const [drawerOpen, setDrawerOpen] = useState(searchParams.get("new") === "1");
 
   return (
@@ -37,38 +34,9 @@ export function ReviewsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Performance Reviews</h1>
-          <p className="text-sm text-muted-foreground">
-            AI-generated reviews from your self-reported work
-          </p>
+            <p className="text-sm text-muted-foreground">Submit and track your Mid-Year and Final-Year reviews.</p>
         </div>
         <div className="flex gap-2">
-          <Select
-            value={type ?? ""}
-            onValueChange={(v) => {
-              const params = new URLSearchParams(searchParams.toString());
-              if (v) params.set("type", v);
-              else params.delete("type");
-              router.replace(`${pathname}?${params}`);
-            }}
-          >
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All types</SelectItem>
-              {TYPES.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t.charAt(0) + t.slice(1).toLowerCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            onClick={() => window.open("/api/export?entity=reviews", "_blank")}
-          >
-            Export CSV
-          </Button>
           <Button onClick={() => setDrawerOpen(true)}>
             <Plus /> New review
           </Button>
@@ -85,10 +53,10 @@ export function ReviewsPage() {
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-20 text-center">
           <ClipboardList className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            No reviews yet. Generate your first AI performance review.
+            No reviews yet. Submit your first review.
           </p>
-          <Button onClick={() => setDrawerOpen(true)} variant="outline" size="sm">
-            <Plus /> Generate review
+            <Button onClick={() => setDrawerOpen(true)} variant="outline" size="sm">
+            <Plus /> Start review
           </Button>
         </div>
       ) : (
@@ -141,7 +109,25 @@ export function ReviewsPage() {
         </motion.div>
       )}
 
-      <ReviewFormDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+      <ReviewFormDrawer
+        open={drawerOpen || Boolean(editReview)}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open && editId) router.replace(pathname);
+        }}
+        review={editReview}
+      />
     </div>
   );
+}
+
+function ManagerReviewsPage() {
+  const { data: reviews, isLoading } = useManagerReviews();
+  const groups = [
+    ["PENDING", "Pending for Review"],
+    ["APPROVED", "Completed / Approved Reviews"],
+    ["REJECTED", "Rejected Reviews"],
+    ["MODIFICATION_REQUIRED", "Modification Required"],
+  ] as const;
+  return <div className="space-y-5"><div><h1 className="text-2xl font-semibold tracking-tight">Employee Reviews</h1><p className="text-sm text-muted-foreground">Review submissions from your employees and record decisions.</p></div>{isLoading ? <Skeleton className="h-64 w-full rounded-xl" /> : <div className="grid gap-5 lg:grid-cols-2">{groups.map(([status, label]) => { const items = reviews?.filter((review) => review.status === status) ?? []; return <Card key={status}><CardHeader><div className="flex items-center justify-between"><h2 className="font-semibold">{label}</h2><Badge variant="secondary">{items.length}</Badge></div></CardHeader><CardContent className="space-y-2">{items.length === 0 ? <p className="text-sm text-muted-foreground">No reviews in this group.</p> : items.map((review) => <Link key={review.id} href={`/reviews/${review.id}`} className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"><div><p className="font-medium">{review.user.name}</p><p className="text-xs text-muted-foreground">{review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review</p></div><div className="text-right text-xs text-muted-foreground"><Badge variant="outline">{review.status}</Badge><p className="mt-1">{format(new Date(review.submittedAt ?? review.createdAt), "MMM d, yyyy")}</p></div></Link>)}</CardContent></Card>; })}</div>}</div>;
 }

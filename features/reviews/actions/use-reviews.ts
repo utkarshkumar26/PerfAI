@@ -3,15 +3,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Review, User } from "@prisma/client";
-import type { ReviewInput, UpdateReviewInput } from "../validations/review.schema";
+import type { EmployeeReviewInput, ReviewInput, UpdateReviewInput } from "../validations/review.schema";
 
 export type ReviewWithUser = Review & {
   user: Pick<User, "id" | "name" | "avatarUrl">;
 };
 
+export type ReviewInputData = Partial<EmployeeReviewInput> & Record<string, unknown>;
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
-  const json = await res.json();
+  const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.success) throw new Error(json.error ?? "Request failed");
   return json.data as T;
 }
@@ -22,6 +24,32 @@ export function useReviews(filters: { type?: string } = {}) {
   return useQuery({
     queryKey: ["reviews", filters],
     queryFn: () => request<ReviewWithUser[]>(`/api/reviews?${params}`),
+  });
+}
+
+export function useManagerReviews() {
+  return useQuery({
+    queryKey: ["reviews", "manager"],
+    queryFn: () => request<ReviewWithUser[]>("/api/reviews"),
+  });
+}
+
+export function useCreateEmployeeReview() {
+  const invalidate = useInvalidateReviews();
+  return useMutation({
+    mutationFn: (input: EmployeeReviewInput) =>
+      request<ReviewWithUser>("/api/reviews", { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: () => { toast.success("Review submitted for manager review"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function usePolishReviewText() {
+  return useMutation({
+    mutationFn: (text: string) => request<{ text: string }>("/api/ai/review/polish", {
+      method: "POST", body: JSON.stringify({ text }),
+    }),
+    onError: (e: Error) => toast.error(e.message),
   });
 }
 
