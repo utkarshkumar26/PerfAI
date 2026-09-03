@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   CheckSquare,
   Goal,
-  Crosshair,
   ClipboardList,
   Compass,
   MessageSquare,
@@ -32,7 +31,6 @@ import { useLogout } from "@/features/auth/actions/use-auth";
 const PAGES = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "OKRs", href: "/okrs", icon: Crosshair },
   { label: "Reviews", href: "/reviews", icon: ClipboardList },
   { label: "Career", href: "/career", icon: Compass },
   { label: "AI Assistant", href: "/chat", icon: MessageSquare },
@@ -45,7 +43,6 @@ const PAGES = [
 interface SearchResults {
   goals: { id: string; title: string; href: string }[];
   reviews: { id: string; period: string; href: string }[];
-  objectives: { id: string; title: string; href: string }[];
   chats: { id: string; title: string | null; href: string }[];
 }
 
@@ -97,7 +94,6 @@ export function CommandPalette({
     results &&
     (results.goals.length > 0 ||
       results.reviews.length > 0 ||
-      results.objectives.length > 0 ||
       results.chats.length > 0);
 
   return (
@@ -131,16 +127,6 @@ export function CommandPalette({
               <CommandItem key={r.id} onSelect={() => go(r.href)}>
                 <ClipboardList className="mr-2 h-4 w-4" />
                 Review — {r.period}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
-        {hasResults && results!.objectives.length > 0 && (
-          <CommandGroup heading="OKRs">
-            {results!.objectives.map((o) => (
-              <CommandItem key={o.id} onSelect={() => go(o.href)}>
-                <Crosshair className="mr-2 h-4 w-4" />
-                {o.title}
               </CommandItem>
             ))}
           </CommandGroup>

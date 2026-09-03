@@ -10,7 +10,6 @@ import {
   MessageSquare,
   BarChart3,
   CheckSquare,
-  Crosshair,
   Users,
   Bell,
   User,
@@ -31,7 +30,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "OKRs", href: "/okrs", icon: Crosshair },
   { label: "Reviews", href: "/reviews", icon: ClipboardList },
   { label: "Career", href: "/career", icon: Compass },
   { label: "AI Assistant", href: "/chat", icon: MessageSquare },

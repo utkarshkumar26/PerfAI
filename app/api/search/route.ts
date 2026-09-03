@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
     return ok({
       goals: goals.map((g) => ({ ...g, href: `/tasks?search=${encodeURIComponent(q)}` })),
       reviews: reviews.map((r) => ({ ...r, href: `/reviews/${r.id}` })),
-      objectives: objectives.map((o) => ({ ...o, href: "/okrs" })),
       chats: chats.map((c) => ({ ...c, href: "/chat" })),
     });
   } catch (error) {
