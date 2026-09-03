@@ -17,15 +17,19 @@ export function StatCard({
   children?: ReactNode;
 }) {
   return (
-    <Card className="rounded-xl shadow-sm">
+    <Card className="rounded-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-[13px] font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+        {Icon && (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Icon className="h-4 w-4" />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
-        <div className={cn("text-2xl font-bold tracking-tight")}>{value}</div>
+        <div className={cn("text-2xl font-semibold tracking-tight")}>{value}</div>
         {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
         {children}
       </CardContent>

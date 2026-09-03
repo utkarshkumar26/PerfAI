@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -22,30 +23,63 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { loginSchema, type LoginInput } from "../validations/auth.schema";
+import { loginSchema, type LoginInput, type LoginRole } from "../validations/auth.schema";
 import { useLogin } from "../actions/use-auth";
 
 export function LoginForm() {
   const login = useLogin();
+  const [mode, setMode] = useState<LoginRole>("EMPLOYEE");
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", role: "EMPLOYEE" },
   });
+
+  useEffect(() => {
+    form.setValue("role", mode, { shouldDirty: false, shouldTouch: false, shouldValidate: false });
+  }, [form, mode]);
+
+  const isManagerMode = mode === "MANAGER";
 
   return (
     <Card className="w-full max-w-md rounded-xl">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-semibold tracking-tight">
-          Welcome back
-        </CardTitle>
-        <CardDescription>
-          Sign in to your AI Performance Review account
-        </CardDescription>
+      <CardHeader className="space-y-3">
+        <div className="grid w-full grid-cols-2 rounded-lg border bg-muted/50 p-1">
+          <Button
+            type="button"
+            variant={isManagerMode ? "ghost" : "default"}
+            size="sm"
+            className="rounded-md"
+            onClick={() => setMode("EMPLOYEE")}
+            aria-pressed={!isManagerMode}
+          >
+            Employee login
+          </Button>
+          <Button
+            type="button"
+            variant={isManagerMode ? "default" : "ghost"}
+            size="sm"
+            className="rounded-md"
+            onClick={() => setMode("MANAGER")}
+            aria-pressed={isManagerMode}
+          >
+            Manager login
+          </Button>
+        </div>
+        <div className="space-y-1">
+          <CardTitle className="text-2xl font-semibold tracking-tight">
+            {isManagerMode ? "Manager sign in" : "Welcome back"}
+          </CardTitle>
+          <CardDescription>
+            {isManagerMode
+              ? "Manager access only. Use your manager credentials to continue."
+              : "Sign in to your AI Performance Review account"}
+          </CardDescription>
+        </div>
       </CardHeader>
       <Form {...form}>
         <form
           noValidate
-          onSubmit={form.handleSubmit((values) => login.mutate(values))}
+          onSubmit={form.handleSubmit((values) => login.mutate({ ...values, role: mode }))}
         >
           <CardContent className="space-y-4">
             <FormField
@@ -57,7 +91,7 @@ export function LoginForm() {
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="you@company.com"
+                      placeholder={isManagerMode ? "manager@company.com" : "you@company.com"}
                       autoComplete="email"
                       {...field}
                     />
@@ -79,6 +113,9 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
+            {isManagerMode && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">Manager access only</p>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={login.isPending}>

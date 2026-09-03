@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { GoalsPage } from "@/features/goals/components/goals-page";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const metadata: Metadata = { title: "Goals" };
+export const metadata: Metadata = { title: "Tasks | PerfAI" };
 
 export default function Page() {
   return (
@@ -12,3 +12,4 @@ export default function Page() {
     </Suspense>
   );
 }
+

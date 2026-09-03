@@ -52,15 +52,26 @@ export async function registerUser(input: RegisterInput) {
 
 export async function verifyCredentials(input: LoginInput) {
   const email = input.email.trim().toLowerCase();
+  const role = input.role ?? "EMPLOYEE";
 
-  if (email === DEMO_MANAGER_EMAIL) {
+  if (role === "MANAGER" && email === DEMO_MANAGER_EMAIL) {
     await ensureDemoManager();
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
   // Constant-shape failure to avoid leaking which field was wrong.
   if (!user) throw new ApiError(401, "Invalid email or password");
+
   const valid = await bcrypt.compare(input.password, user.passwordHash);
   if (!valid) throw new ApiError(401, "Invalid email or password");
+
+  if (role === "MANAGER" && user.role !== "MANAGER" && user.role !== "ADMIN") {
+    throw new ApiError(403, "This account is not authorized for manager login.");
+  }
+
+  if (role === "EMPLOYEE" && user.role !== "EMPLOYEE") {
+    throw new ApiError(403, "This account is not authorized for employee login.");
+  }
+
   return user;
 }

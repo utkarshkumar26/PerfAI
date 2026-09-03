@@ -9,9 +9,28 @@ import type {
   AIGoalSuggestionInput,
 } from "../validations/goal.schema";
 
+export interface TaskComment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string | null;
+  text: string;
+  createdAt: string;
+}
+
+export interface TaskDebugInfo {
+  browser?: string;
+  userAgent?: string;
+  userId?: string;
+  ip?: string;
+  env?: string;
+  revision?: string;
+  [key: string]: unknown;
+}
+
 export type GoalWithUsers = Goal & {
-  user: Pick<User, "id" | "name" | "avatarUrl">;
-  assignedBy: Pick<User, "id" | "name"> | null;
+  user: Pick<User, "id" | "name" | "avatarUrl" | "designation" | "email">;
+  assignedBy: Pick<User, "id" | "name" | "avatarUrl"> | null;
 };
 
 export interface GoalListResponse {
@@ -24,10 +43,22 @@ export interface GoalFilters {
   priority?: string;
   category?: string;
   search?: string;
+  userId?: string;
+  section?: string;
+  project?: string;
   sortBy?: string;
   sortOrder?: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface TaskAISolution {
+  summary: string;
+  rootCause: string;
+  solutionSteps: string[];
+  codeSnippet?: string;
+  suggestedPRTitle: string;
+  testPlan: string[];
 }
 
 interface AIGoalSuggestions {
@@ -68,11 +99,12 @@ export function useGoals(filters: GoalFilters = {}) {
   });
 }
 
-function useInvalidateGoals() {
+export function useInvalidateGoals() {
   const queryClient = useQueryClient();
   return () => {
     queryClient.invalidateQueries({ queryKey: ["goals"] });
     queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["manager-analytics"] });
   };
 }
 
@@ -80,9 +112,9 @@ export function useCreateGoal() {
   const invalidate = useInvalidateGoals();
   return useMutation({
     mutationFn: (input: CreateGoalInput) =>
-      request<Goal>("/api/goals", { method: "POST", body: JSON.stringify(input) }),
+      request<GoalWithUsers>("/api/goals", { method: "POST", body: JSON.stringify(input) }),
     onSuccess: () => {
-      toast.success("Goal created");
+      toast.success("Task created successfully");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -93,9 +125,9 @@ export function useUpdateGoal() {
   const invalidate = useInvalidateGoals();
   return useMutation({
     mutationFn: ({ id, ...input }: UpdateGoalInput & { id: string }) =>
-      request<Goal>(`/api/goals/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+      request<GoalWithUsers>(`/api/goals/${id}`, { method: "PUT", body: JSON.stringify(input) }),
     onSuccess: () => {
-      toast.success("Goal updated");
+      toast.success("Task updated");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -108,9 +140,36 @@ export function useDeleteGoal() {
     mutationFn: (id: string) =>
       request<{ deleted: boolean }>(`/api/goals/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Goal deleted");
+      toast.success("Task deleted");
       invalidate();
     },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useAddTaskComment() {
+  const invalidate = useInvalidateGoals();
+  return useMutation({
+    mutationFn: ({ taskId, text }: { taskId: string; text: string }) =>
+      request<GoalWithUsers>(`/api/goals/${taskId}`, {
+        method: "PUT",
+        body: JSON.stringify({ comment: { text } }),
+      }),
+    onSuccess: () => {
+      toast.success("Comment added");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useSolveTaskWithAI() {
+  return useMutation({
+    mutationFn: (taskData: Partial<GoalWithUsers>) =>
+      request<TaskAISolution>("/api/ai/tasks/solve", {
+        method: "POST",
+        body: JSON.stringify(taskData),
+      }),
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -125,3 +184,21 @@ export function useAIGoalSuggestions() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
+export interface GeneratedDescriptionData {
+  description: string;
+  summary?: string;
+}
+
+export function useGenerateTaskDescription() {
+  return useMutation({
+    mutationFn: (input: { title?: string; prompt?: string; project?: string }) =>
+      request<GeneratedDescriptionData>("/api/ai/tasks/generate-description", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+

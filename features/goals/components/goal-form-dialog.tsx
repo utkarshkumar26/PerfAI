@@ -137,7 +137,12 @@ export function GoalFormDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="What does success look like?" {...field} />
+                    <Textarea
+                      rows={3}
+                      placeholder="What does success look like?"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -201,7 +206,7 @@ export function GoalFormDialog({
                   <FormItem>
                     <FormLabel>Category</FormLabel>
                     <FormControl>
-                      <Input placeholder="Engineering" {...field} />
+                      <Input placeholder="Engineering" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -231,7 +236,7 @@ export function GoalFormDialog({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value ?? undefined}
                           onSelect={field.onChange}
                         />
                       </PopoverContent>
@@ -253,6 +258,7 @@ export function GoalFormDialog({
                       min={0}
                       max={100}
                       {...field}
+                      value={field.value ?? 0}
                       onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                     />
                   </FormControl>
@@ -267,7 +273,12 @@ export function GoalFormDialog({
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="Any blockers or context..." {...field} />
+                    <Textarea
+                      rows={2}
+                      placeholder="Any blockers or context..."
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

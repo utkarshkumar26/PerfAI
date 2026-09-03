@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
+  CheckSquare,
   Goal,
   Crosshair,
   ClipboardList,
@@ -30,7 +31,7 @@ import { useLogout } from "@/features/auth/actions/use-auth";
 
 const PAGES = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Goals", href: "/goals", icon: Goal },
+  { label: "Tasks", href: "/tasks", icon: CheckSquare },
   { label: "OKRs", href: "/okrs", icon: Crosshair },
   { label: "Reviews", href: "/reviews", icon: ClipboardList },
   { label: "Career", href: "/career", icon: Compass },
@@ -115,10 +116,10 @@ export function CommandPalette({
         <CommandEmpty>No results found.</CommandEmpty>
 
         {hasResults && results!.goals.length > 0 && (
-          <CommandGroup heading="Goals">
+          <CommandGroup heading="Tasks">
             {results!.goals.map((g) => (
               <CommandItem key={g.id} onSelect={() => go(g.href)}>
-                <Goal className="mr-2 h-4 w-4" />
+                <CheckSquare className="mr-2 h-4 w-4" />
                 {g.title}
               </CommandItem>
             ))}
@@ -166,7 +167,7 @@ export function CommandPalette({
               ))}
             </CommandGroup>
             <CommandGroup heading="Actions">
-              <CommandItem onSelect={() => go("/goals?new=1")}>Create new goal</CommandItem>
+              <CommandItem onSelect={() => go("/tasks?new=1")}>Create new task</CommandItem>
               <CommandItem onSelect={() => go("/reviews?new=1")}>Generate review</CommandItem>
               <CommandItem
                 onSelect={() => {
@@ -174,7 +175,7 @@ export function CommandPalette({
                   window.open("/api/export?entity=goals", "_blank");
                 }}
               >
-                <Download className="mr-2 h-4 w-4" /> Export goals CSV
+                <Download className="mr-2 h-4 w-4" /> Export tasks CSV
               </CommandItem>
               <CommandItem onSelect={() => logout.mutate()}>
                 <LogOut className="mr-2 h-4 w-4" />

@@ -1,191 +1,148 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, Kanban, LayoutList, Plus, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGoals, type GoalFilters, type GoalWithUsers } from "../actions/use-goals";
-import { KanbanBoard } from "./kanban-board";
-import { GoalList } from "./goal-list";
-import { GoalFormDialog } from "./goal-form-dialog";
+import { useSession } from "@/features/auth/actions/use-auth";
+import { ManagerTasksView } from "./manager-tasks-view";
+import { EmployeeTasksView } from "./employee-tasks-view";
+import { TaskDetailDrawer } from "./task-detail-drawer";
+import { TaskCreateDialog } from "./task-create-dialog";
 import { AIGoalSuggestionDialog } from "./ai-suggestion-dialog";
+import { Users, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function GoalsPage() {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: user, isLoading: loadingSession } = useSession();
+
+  const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
+
+  // Manager can toggle between "Team Overview" and "My Personal Tasks"
+  const [managerActiveView, setManagerActiveView] = useState<"team" | "my_tasks">("team");
 
   const filters: GoalFilters = {
-    status: searchParams.get("status") ?? undefined,
-    priority: searchParams.get("priority") ?? undefined,
     search: searchParams.get("search") ?? undefined,
-    page: Number(searchParams.get("page")) || 1,
-    pageSize: 50,
+    pageSize: 100,
   };
-  const view = searchParams.get("view") ?? "board";
 
   const { data, isLoading } = useGoals(filters);
-  const [editing, setEditing] = useState<GoalWithUsers | null>(null);
-  const [formOpen, setFormOpen] = useState(searchParams.get("new") === "1");
+  const [selectedTask, setSelectedTask] = useState<GoalWithUsers | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(searchParams.get("new") === "1");
+  const [createForUserId, setCreateForUserId] = useState<string | undefined>(undefined);
+  const [createDefaultSection, setCreateDefaultSection] = useState<string>("ASSIGNED");
   const [aiOpen, setAiOpen] = useState(false);
 
-  const setParam = (key: string, value?: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === undefined || value === "") params.delete(key);
-    else params.set(key, value);
-    if (key !== "page") params.delete("page");
-    router.replace(`${pathname}?${params.toString()}`);
+  const allTasks = data?.goals ?? [];
+
+  // Filter tasks if manager switches to "My Tasks"
+  const displayTasks =
+    isManager && managerActiveView === "my_tasks"
+      ? allTasks.filter((t) => t.userId === user?.id)
+      : allTasks;
+
+  const handleOpenTask = (task: GoalWithUsers) => {
+    setSelectedTask(task);
+    setDrawerOpen(true);
   };
 
-  const goals = data?.goals ?? [];
+  const handleCreateForUser = (userId: string) => {
+    setCreateForUserId(userId);
+    setCreateDialogOpen(true);
+  };
+
+  const handleOpenCreate = (section?: string) => {
+    setCreateForUserId(undefined);
+    setCreateDefaultSection(section || "ASSIGNED");
+    setCreateDialogOpen(true);
+  };
+
+  if (isLoading || loadingSession) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Goals</h1>
-          <p className="text-sm text-muted-foreground">
-            {data ? `${data.pagination.total} goals` : "Track and manage your goals"}
-          </p>
+      {/* Manager View Switcher Tab (Only shown to managers) */}
+      {isManager && (
+        <div className="flex items-center justify-end">
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border text-xs">
+            <button
+              onClick={() => setManagerActiveView("team")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold transition-colors",
+                managerActiveView === "team"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Team Overview (Manager View)
+            </button>
+            <button
+              onClick={() => setManagerActiveView("my_tasks")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold transition-colors",
+                managerActiveView === "my_tasks"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <UserIcon className="h-3.5 w-3.5" />
+              My Tasks
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => window.open("/api/export?entity=goals", "_blank")}
-          >
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={() => setAiOpen(true)}>
-            <Sparkles /> AI Suggestions
-          </Button>
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus /> New goal
-          </Button>
-        </div>
-      </div>
+      )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search goals..."
-            className="w-56 pl-8"
-            defaultValue={filters.search}
-            onChange={(e) => setParam("search", e.target.value || undefined)}
-          />
-        </div>
-        <Select
-          value={filters.status ?? ""}
-          onValueChange={(v) => setParam("status", v || undefined)}
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
-            <SelectItem value="TODO">To do</SelectItem>
-            <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-            <SelectItem value="BLOCKED">Blocked</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={filters.priority ?? ""}
-          onValueChange={(v) => setParam("priority", v || undefined)}
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All priorities</SelectItem>
-            <SelectItem value="LOW">Low</SelectItem>
-            <SelectItem value="MEDIUM">Medium</SelectItem>
-            <SelectItem value="HIGH">High</SelectItem>
-            <SelectItem value="CRITICAL">Critical</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="ml-auto">
-          <Tabs value={view} onValueChange={(v) => setParam("view", v)}>
-            <TabsList>
-              <TabsTrigger value="board" aria-label="Kanban board">
-                <Kanban /> Board
-              </TabsTrigger>
-              <TabsTrigger value="list" aria-label="List view">
-                <LayoutList /> List
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
-        </div>
-      ) : view === "board" ? (
-        <KanbanBoard
-          goals={goals}
-          onEdit={(g) => {
-            setEditing(g);
-            setFormOpen(true);
-          }}
+      {/* Render View: If manager viewing team -> ManagerTasksView (Image 1); Else -> EmployeeTasksView (Image 2) */}
+      {isManager && managerActiveView === "team" ? (
+        <ManagerTasksView
+          tasks={allTasks}
+          onSelectTask={handleOpenTask}
+          onCreateTaskForUser={handleCreateForUser}
+          onOpenCreateDialog={() => handleOpenCreate()}
         />
       ) : (
-        <GoalList
-          goals={goals}
-          onEdit={(g) => {
-            setEditing(g);
-            setFormOpen(true);
-          }}
+        <EmployeeTasksView
+          tasks={displayTasks}
+          onSelectTask={handleOpenTask}
+          onOpenCreateDialog={(section) => handleOpenCreate(section)}
         />
       )}
 
-      {data && data.pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            disabled={filters.page! <= 1}
-            onClick={() => setParam("page", String(filters.page! - 1))}
-          >
-            <ChevronLeft />
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {data.pagination.page} of {data.pagination.totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            disabled={filters.page! >= data.pagination.totalPages}
-            onClick={() => setParam("page", String(filters.page! + 1))}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-      )}
-
-      <GoalFormDialog
-        open={formOpen}
+      {/* Rich Task Detail Drawer (Image 3) */}
+      <TaskDetailDrawer
+        task={selectedTask}
+        open={drawerOpen}
         onOpenChange={(open) => {
-          setFormOpen(open);
-          if (!open) setEditing(null);
+          setDrawerOpen(open);
+          if (!open) setSelectedTask(null);
         }}
-        goal={editing}
       />
+
+      {/* Task Creation Dialog */}
+      <TaskCreateDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        defaultUserId={createForUserId}
+        defaultSection={createDefaultSection}
+      />
+
+      {/* AI Suggestion Dialog */}
       <AIGoalSuggestionDialog open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
 }
+

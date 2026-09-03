@@ -24,6 +24,24 @@ export function handleApiError(error: unknown) {
   if (error instanceof ZodError) {
     return fail("Validation failed", 422, error.flatten().fieldErrors);
   }
+
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("429") ||
+    lower.includes("too many requests") ||
+    lower.includes("rate limit") ||
+    lower.includes("quota") ||
+    lower.includes("temporarily unavailable")
+  ) {
+    return fail("AI service is temporarily unavailable. Please try again later.", 503);
+  }
+
+  if (lower.includes("api key") || lower.includes("not configured") || lower.includes("unauthorized")) {
+    return fail("AI service is not configured correctly. Please contact support.", 500);
+  }
+
   console.error("[API Error]", error);
   return fail("Internal server error", 500);
 }

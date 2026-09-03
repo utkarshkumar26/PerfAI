@@ -11,10 +11,15 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Password must contain a number"),
 });
 
+export const loginRoleSchema = z.enum(["EMPLOYEE", "MANAGER"]);
+
 export const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+  role: loginRoleSchema.optional().default("EMPLOYEE"),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export type LoginInput = z.input<typeof loginSchema>;
+export type LoginRole = z.infer<typeof loginRoleSchema>;
+

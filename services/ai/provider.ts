@@ -74,8 +74,13 @@ class OpenAIProvider implements AIProvider {
 
 class GeminiProvider implements AIProvider {
   readonly name = "gemini";
-  private model = env.AI_PROVIDER === "gemini" ? env.AI_MODEL : "gemini-1.5-flash";
-  private apiKey = env.GEMINI_API_KEY;
+  private get model() {
+    const m = env.AI_MODEL;
+    return m && m.startsWith("gemini") ? m : "gemini-2.5-flash";
+  }
+  private get apiKey() {
+    return env.GEMINI_API_KEY;
+  }
 
   async chat(messages: ChatMessage[], options: GenerateOptions = {}): Promise<string> {
     if (!this.apiKey) throw new Error("GEMINI_API_KEY is not configured");
@@ -130,7 +135,12 @@ const providers: Record<string, AIProvider> = {
 };
 
 export function getAIProvider(): AIProvider {
-  const provider = providers[env.AI_PROVIDER];
+  const providerKey =
+    env.AI_PROVIDER === "gemini" || (env.GEMINI_API_KEY && !env.OPENAI_API_KEY)
+      ? "gemini"
+      : env.AI_PROVIDER;
+
+  const provider = providers[providerKey] ?? providers.gemini;
   if (!provider) throw new Error(`Unknown AI provider: ${env.AI_PROVIDER}`);
   return provider;
 }

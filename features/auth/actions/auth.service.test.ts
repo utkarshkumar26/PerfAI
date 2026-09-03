@@ -1,3 +1,6 @@
+jest.mock("server-only", () => ({}));
+
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyCredentials } from "./auth.service";
 
@@ -19,7 +22,7 @@ describe("verifyCredentials", () => {
       id: "mgr-1",
       email: "manager@perfai.demo",
       name: "Priya Sharma",
-      passwordHash: "$2a$12$ALW1x4kYhehivX4j9lW/5eHk6x0IUO1iI4fNf8vy2nFJr7MjfLQeG",
+      passwordHash: bcrypt.hashSync("Password1", 12),
       role: "MANAGER",
     };
 
@@ -29,7 +32,7 @@ describe("verifyCredentials", () => {
     (prisma.department.upsert as jest.Mock).mockResolvedValueOnce({ id: "dept-1" });
     (prisma.user.create as jest.Mock).mockResolvedValueOnce(createdUser);
 
-    const user = await verifyCredentials({ email: "manager@perfai.demo", password: "Password1" });
+    const user = await verifyCredentials({ email: "manager@perfai.demo", password: "Password1", role: "MANAGER" });
 
     expect(user.email).toBe("manager@perfai.demo");
     expect(prisma.department.upsert).toHaveBeenCalledWith({
@@ -38,5 +41,37 @@ describe("verifyCredentials", () => {
       create: { name: "Engineering" },
     });
     expect(prisma.user.create).toHaveBeenCalled();
+  });
+
+  it("rejects manager credentials when employee mode is selected", async () => {
+    const managerUser = {
+      id: "mgr-1",
+      email: "manager@perfai.demo",
+      name: "Priya Sharma",
+      passwordHash: bcrypt.hashSync("Password1", 12),
+      role: "MANAGER",
+    };
+
+    (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(managerUser);
+
+    await expect(
+      verifyCredentials({ email: "manager@perfai.demo", password: "Password1", role: "EMPLOYEE" })
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("rejects employee credentials when manager mode is selected", async () => {
+    const employeeUser = {
+      id: "emp-1",
+      email: "utkarshtiwari20020@gmail.com",
+      name: "Utkarsh Kumar",
+      passwordHash: bcrypt.hashSync("Password1", 12),
+      role: "EMPLOYEE",
+    };
+
+    (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(employeeUser);
+
+    await expect(
+      verifyCredentials({ email: "utkarshtiwari20020@gmail.com", password: "Password1", role: "MANAGER" })
+    ).rejects.toMatchObject({ status: 403 });
   });
 });

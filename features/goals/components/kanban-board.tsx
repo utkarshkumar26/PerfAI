@@ -6,6 +6,13 @@ import { GoalCard, STATUS_LABEL } from "./goal-card";
 
 const COLUMNS: GoalStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "COMPLETED"];
 
+const COLUMN_DOT: Record<GoalStatus, string> = {
+  TODO: "bg-slate-400",
+  IN_PROGRESS: "bg-blue-500",
+  BLOCKED: "bg-amber-500",
+  COMPLETED: "bg-emerald-500",
+};
+
 export function KanbanBoard({
   goals,
   onEdit,
@@ -24,7 +31,10 @@ export function KanbanBoard({
               className="flex flex-col gap-2 rounded-xl bg-muted/40 p-2"
             >
               <div className="flex items-center justify-between px-2 py-1">
-                <span className="text-sm font-medium">{STATUS_LABEL[status]}</span>
+                <span className="flex items-center gap-2 text-[13px] font-semibold">
+                  <span className={`h-2 w-2 rounded-full ${COLUMN_DOT[status]}`} />
+                  {STATUS_LABEL[status]}
+                </span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                   {columnGoals.length}
                 </span>

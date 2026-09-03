@@ -95,15 +95,32 @@ model Department {
 
 model Goal {
   id          String     @id @default(uuid())
+  taskNumber  String?    // e.g. "T195721645"
   title       String
   description String?
   priority    Priority   @default(MEDIUM)
   status      GoalStatus @default(TODO)
   category    String?
   dueDate     DateTime?
+  startDate   DateTime?
   progress    Int        @default(0) // 0-100
   notes       String?
   approved    Boolean    @default(false)
+
+  section            String?   @default("ASSIGNED") // ASSIGNED | DOING | LATER
+  project            String?   @default("Wipro Build People")
+  size               String?   @default("M") // XS | S | M | L | XL
+  sprint             String?   @default("Sprint 42")
+  owningTeam         String?   @default("Wipro Build People")
+  bugType            String?
+  sectionOrTab       String?
+  descriptionIfOther String?
+  reproSteps         String?
+  expectedResult     String?
+  actualResult       String?
+  debugInfo          Json?
+  comments           Json?     // [{ id, userId, userName, userAvatar, text, createdAt }]
+  starred            Boolean   @default(false)
 
   userId       String
   user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -115,6 +132,7 @@ model Goal {
 
   @@index([userId, status])
   @@index([dueDate])
+  @@index([taskNumber])
 }
 
 model Review {

@@ -9,11 +9,12 @@ import {
   Compass,
   MessageSquare,
   BarChart3,
-  Goal,
+  CheckSquare,
   Crosshair,
   Users,
   Bell,
   User,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/features/auth/actions/use-auth";
@@ -29,7 +30,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Goals", href: "/goals", icon: Goal },
+  { label: "Tasks", href: "/tasks", icon: CheckSquare },
   { label: "OKRs", href: "/okrs", icon: Crosshair },
   { label: "Reviews", href: "/reviews", icon: ClipboardList },
   { label: "Career", href: "/career", icon: Compass },
@@ -57,15 +58,21 @@ export function Sidebar() {
       : NAV_ITEMS;
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r bg-card/50 backdrop-blur md:flex">
-      <div className="flex h-14 items-center px-6">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-          PerfAI
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <div className="flex h-14 items-center gap-2.5 px-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+          <Gauge className="h-4 w-4" />
+        </div>
+        <Link href="/dashboard" className="flex flex-col leading-none">
+          <span className="text-base font-semibold tracking-tight">PerfAI</span>
+          <span className="mt-0.5 text-[11px] text-muted-foreground">
+            Performance Platform
+          </span>
         </Link>
       </div>
-      <Separator />
+      <Separator className="opacity-60" />
       <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           {items.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
@@ -77,17 +84,22 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-primary/10"
+                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className={cn("h-4 w-4", active && "text-sidebar-primary")} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
       </ScrollArea>
+      <div className="border-t border-sidebar-border px-5 py-3">
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          PerfAI — AI Performance Review &amp; Career Assistant
+        </p>
+      </div>
     </aside>
   );
 }

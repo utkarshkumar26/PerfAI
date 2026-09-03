@@ -58,7 +58,8 @@ export function DashboardHome() {
     >
       {/* Welcome */}
       <motion.div variants={item}>
-        <Card className="relative overflow-hidden rounded-xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card shadow-sm">
+        <Card className="relative overflow-hidden rounded-xl border-primary/15 bg-gradient-to-br from-primary/8 via-card to-card">
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-primary/10 to-transparent md:block" />
           <CardHeader>
             <CardTitle className="text-2xl">
               {isLoading ? (
@@ -114,9 +115,9 @@ export function DashboardHome() {
               icon={Gauge}
             />
             <StatCard
-              title="Active Goals"
+              title="Active Tasks"
               value={data?.stats.activeGoalsCount ?? 0}
-              subtitle={`${data?.stats.totalGoals ?? 0} total goals`}
+              subtitle={`${data?.stats.totalGoals ?? 0} total tasks`}
               icon={Target}
             />
             <StatCard
@@ -136,16 +137,16 @@ export function DashboardHome() {
       </motion.div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Active goals */}
+        {/* Active tasks */}
         <motion.div variants={item} className="lg:col-span-2">
           <Card className="rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Current Goals</CardTitle>
+                <CardTitle>Current Tasks</CardTitle>
                 <CardDescription>Your work in progress</CardDescription>
               </div>
               <Button asChild variant="ghost" size="sm">
-                <Link href="/goals">View all</Link>
+                <Link href="/tasks">View all</Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -157,10 +158,10 @@ export function DashboardHome() {
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
                   <Target className="h-8 w-8 text-muted-foreground/50" />
                   <p className="text-sm text-muted-foreground">
-                    No active goals yet. Create your first goal to get started.
+                    No active tasks yet. Create your first task to get started.
                   </p>
                   <Button asChild size="sm" variant="outline">
-                    <Link href="/goals?new=1">Create goal</Link>
+                    <Link href="/tasks?new=1">Create task</Link>
                   </Button>
                 </div>
               ) : (

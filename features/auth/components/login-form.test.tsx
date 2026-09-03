@@ -15,11 +15,20 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe("<LoginForm />", () => {
-  it("renders email and password fields", () => {
+  it("renders the employee and manager login toggle and form fields", () => {
     renderWithProviders(<LoginForm />);
+    expect(screen.getByRole("button", { name: /employee login/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /manager login/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it("switches the login mode to manager", () => {
+    renderWithProviders(<LoginForm />);
+    fireEvent.click(screen.getByRole("button", { name: /manager login/i }));
+    expect(screen.getByText(/manager sign in/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/manager@company.com/i)).toBeInTheDocument();
   });
 
   it("shows a validation error for an invalid email", async () => {
