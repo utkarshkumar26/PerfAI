@@ -107,7 +107,6 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
   const solveAiMutation = useSolveTaskWithAI();
   const generateDescMutation = useGenerateTaskDescription();
 
-  const isManager = currentUser?.role === "MANAGER" || currentUser?.role === "ADMIN";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Local Form State
@@ -130,6 +129,7 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
   const [copiedId, setCopiedId] = useState(false);
   const [aiSolution, setAiSolution] = useState<TaskAISolution | null>(null);
   const [showAiSolution, setShowAiSolution] = useState(false);
+  const selectedEmployee = employeesData?.employees.find((employee) => employee.id === assignedUserId);
 
   // AI Description Generator Drawer / Box State
   const [showAiGenerator, setShowAiGenerator] = useState(false);
@@ -179,7 +179,7 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
       description,
       status,
       priority,
-      userId: isManager ? assignedUserId : undefined,
+      userId: assignedUserId || undefined,
       owningTeam,
       size,
       sprint,
@@ -524,7 +524,7 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
                 </AvatarFallback>
               </Avatar>
 
-              {isManager && employeesData?.employees ? (
+              {employeesData?.employees ? (
                 <Select
                   value={assignedUserId}
                   onValueChange={(v) => {
@@ -532,7 +532,9 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
                   }}
                 >
                   <SelectTrigger className="h-7 text-xs border-dashed w-36 px-2">
-                    <SelectValue placeholder="Assignee" />
+                    <SelectValue placeholder="Assignee">
+                      {selectedEmployee?.name ?? task.user?.name ?? "Selected team member"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {employeesData.employees.map((emp) => (

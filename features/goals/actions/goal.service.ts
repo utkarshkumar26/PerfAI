@@ -99,7 +99,6 @@ export async function createGoal(user: User, input: CreateGoalInput) {
   let assignedById: string | null = null;
 
   if (input.userId && input.userId !== user.id) {
-    if (!isManager) throw new ApiError(403, "Only managers can assign tasks to others");
     ownerId = input.userId;
     assignedById = user.id;
   }
@@ -219,9 +218,9 @@ export async function updateGoal(user: User, id: string, input: UpdateGoalInput)
     });
   }
 
-  // Manager can reassign to another employee
-  const isManager = user.role === "MANAGER" || user.role === "ADMIN";
-  const newUserId = isManager && input.userId ? input.userId : existing.userId;
+  const newUserId = input.userId || existing.userId;
+  const newAssignedById =
+    input.userId && input.userId !== existing.userId ? user.id : existing.assignedById;
 
   const goal = await prisma.goal.update({
     where: { id },
@@ -258,6 +257,7 @@ export async function updateGoal(user: User, id: string, input: UpdateGoalInput)
       comments: (updatedComments as unknown as Prisma.InputJsonValue) ?? [],
       starred: input.starred !== undefined ? input.starred : existing.starred,
       userId: newUserId,
+      assignedById: newAssignedById,
     },
     include: {
       user: { select: { id: true, name: true, avatarUrl: true, designation: true, email: true } },

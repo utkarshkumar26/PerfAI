@@ -8,13 +8,10 @@ export async function listEmployees(
   manager: User,
   q: { search?: string; departmentId?: string; page: number; pageSize: number; skip: number }
 ) {
-  if (manager.role !== "MANAGER" && manager.role !== "ADMIN") {
-    throw new ApiError(403, "Managers only");
-  }
-
   const where: Prisma.UserWhereInput = {
     id: { not: manager.id },
     ...(manager.role === "MANAGER" ? { managerId: manager.id } : {}),
+    ...(manager.role === "EMPLOYEE" ? { role: "EMPLOYEE" } : {}),
     ...(q.departmentId ? { departmentId: q.departmentId } : {}),
     ...(q.search
       ? {

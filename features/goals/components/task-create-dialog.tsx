@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import { useCreateGoal, useGenerateTaskDescription } from "../actions/use-goals";
 import { useEmployees } from "@/features/manager/actions/use-manager";
-import { useSession } from "@/features/auth/actions/use-auth";
 import { MarkdownView } from "@/components/ui/markdown-view";
 import {
   Loader2,
@@ -60,12 +59,9 @@ export function TaskCreateDialog({
   defaultUserId,
   defaultSection = "ASSIGNED",
 }: TaskCreateDialogProps) {
-  const { data: currentUser } = useSession();
   const { data: employeesData } = useEmployees("");
   const createGoalMutation = useCreateGoal();
   const generateDescMutation = useGenerateTaskDescription();
-
-  const isManager = currentUser?.role === "MANAGER" || currentUser?.role === "ADMIN";
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -73,6 +69,7 @@ export function TaskCreateDialog({
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL">("MEDIUM");
   const [status, setStatus] = useState<"TODO" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED">("TODO");
   const [assignedUserId, setAssignedUserId] = useState(defaultUserId || "");
+  const selectedEmployee = employeesData?.employees.find((employee) => employee.id === assignedUserId);
   const [owningTeam, setOwningTeam] = useState("Wipro Build People");
   const [size, setSize] = useState("M");
   const [sprint, setSprint] = useState("Sprint 42");
@@ -121,7 +118,7 @@ export function TaskCreateDialog({
         description: description.trim() || undefined,
         priority,
         status,
-        userId: isManager && assignedUserId ? assignedUserId : undefined,
+        userId: assignedUserId || undefined,
         section: defaultSection,
         owningTeam,
         size,
@@ -170,9 +167,9 @@ export function TaskCreateDialog({
 
           {/* Assignee & Team Grid */}
           <div className="grid grid-cols-2 gap-3">
-            {isManager && employeesData?.employees && (
+            {employeesData?.employees && (
               <div>
-                <label className="font-bold text-foreground block mb-1">Assign to Employee:</label>
+                <label className="font-bold text-foreground block mb-1">Assign to:</label>
                 <Select
                   value={assignedUserId}
                   onValueChange={(v) => {
@@ -180,7 +177,9 @@ export function TaskCreateDialog({
                   }}
                 >
                   <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Select team member..." />
+                    <SelectValue placeholder="Select team member...">
+                      {selectedEmployee?.name ?? (assignedUserId ? "Selected team member" : undefined)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {employeesData.employees.map((emp) => (

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/features/auth/actions/session";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
+import { QuickTaskButton } from "@/components/quick-task-button";
 
 /**
  * Server-side auth guard for every dashboard route + app shell.
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
+      <QuickTaskButton />
     </div>
   );
 }
