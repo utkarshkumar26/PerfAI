@@ -22,6 +22,10 @@ export interface TeamAnalytics {
   headcount: number;
   goalsByStatus: { status: string; count: number }[];
   goalsDueThisWeek: number;
+  activeGoalsCount: number;
+  completedGoalsCount: number;
+  completedThisWeekCount: number;
+  missedDeadlines: { id: string; title: string; dueDate: Date | null; userId: string }[];
   skillDistribution: { skill: string; count: number }[];
   topPerformers: { id: string; name: string; completedThisMonth: number; avgRating: number | null }[];
   monthlyPerformance: { month: string; avgRating: number | null }[];
@@ -39,7 +43,7 @@ export function useEmployees(search?: string, page = 1) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   params.set("page", String(page));
-  params.set("pageSize", "10");
+  params.set("pageSize", "50");
   return useQuery({
     queryKey: ["manager", "employees", search ?? "", page],
     queryFn: () =>

@@ -39,7 +39,6 @@ const TYPES = [
   { value: "PROMOTION", label: "Promotion Readiness" },
   { value: "LEARNING", label: "Learning Plan" },
   { value: "SALARY", label: "Salary Growth" },
-  { value: "INTERVIEW", label: "Interview Prep" },
 ] as const;
 
 export function CareerFormDialog({
@@ -55,6 +54,7 @@ export function CareerFormDialog({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(careerRequestSchema) as never,
+    mode: "onBlur",
     defaultValues: {
       type: "ROADMAP",
       currentRole: "",
@@ -171,11 +171,23 @@ export function CareerFormDialog({
                     <Input
                       placeholder="React, Node.js, SQL"
                       value={field.value.join(", ")}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
-                        )
-                      }
+                      onChange={(e) => {
+                        const input = e.target.value;
+                        const skills = input
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter((s) => s.length > 0);
+                        field.onChange(skills);
+                      }}
+                      onBlur={(e) => {
+                        const input = e.target.value;
+                        const skills = input
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter((s) => s.length > 0);
+                        field.onChange(skills);
+                        field.onBlur();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

@@ -98,7 +98,7 @@ export async function getTeamAnalytics(manager: User) {
   });
   const ids = team.map((t) => t.id);
 
-  const [goalsByStatus, completionsByUser, ratingsByMonth, goalsDueThisWeek] =
+  const [goalsByStatus, completionsByUser, ratingsByMonth, goalsDueThisWeek, completedThisWeek, missedDeadlines] =
     await Promise.all([
       prisma.goal.groupBy({
         by: ["status"],
@@ -120,6 +120,22 @@ export async function getTeamAnalytics(manager: User) {
           status: { not: "COMPLETED" },
           dueDate: { lte: new Date(now.getTime() + 7 * 86400000) },
         },
+      }),
+      prisma.goal.findMany({
+        where: {
+          userId: { in: ids },
+          status: "COMPLETED",
+          updatedAt: { gte: ms },
+        },
+        select: { id: true, title: true, userId: true, dueDate: true },
+      }),
+      prisma.goal.findMany({
+        where: {
+          userId: { in: ids },
+          status: { not: "COMPLETED" },
+          dueDate: { lt: now },
+        },
+        select: { id: true, title: true, userId: true, dueDate: true },
       }),
     ]);
 
@@ -188,6 +204,15 @@ export async function getTeamAnalytics(manager: User) {
     headcount: ids.length,
     goalsByStatus: goalsByStatus.map((g) => ({ status: g.status, count: g._count._all })),
     goalsDueThisWeek,
+    activeGoalsCount: goalsByStatus.find((g) => g.status === "IN_PROGRESS")?._count._all ?? 0,
+    completedGoalsCount: goalsByStatus.find((g) => g.status === "COMPLETED")?._count._all ?? 0,
+    completedThisWeekCount: completedThisWeek.length,
+    missedDeadlines: missedDeadlines.map((goal) => ({
+      id: goal.id,
+      title: goal.title,
+      dueDate: goal.dueDate,
+      userId: goal.userId,
+    })),
     skillDistribution,
     topPerformers,
     monthlyPerformance,

@@ -11,6 +11,7 @@ import {
   Gauge,
   Target,
   TrendingUp,
+  Users as UsersIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,59 +83,35 @@ export function DashboardHome() {
         </Card>
       </motion.div>
 
-      {/* Stat cards */}
-      <motion.div
-        variants={item}
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="rounded-xl">
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <>
-            <StatCard
-              title="Performance Score"
-              value={
-                data?.stats.performanceScore
-                  ? `${data.stats.performanceScore.toFixed(1)} / 5`
-                  : "—"
-              }
-              subtitle={
-                data?.stats.reviewsCount
-                  ? `Across ${data.stats.reviewsCount} reviews`
-                  : "No reviews yet"
-              }
-              icon={Gauge}
-            />
-            <StatCard
-              title="Active Tasks"
-              value={data?.stats.activeGoalsCount ?? 0}
-              subtitle={`${data?.stats.totalGoals ?? 0} total tasks`}
-              icon={Target}
-            />
-            <StatCard
-              title="Completed"
-              value={data?.stats.completedGoals ?? 0}
-              subtitle={`${data?.stats.completionRate ?? 0}% completion rate`}
-              icon={CheckCircle2}
-            />
-            <StatCard
-              title="This Week"
-              value={data?.stats.weeklyCompleted ?? 0}
-              subtitle={`${data?.stats.monthlyCompleted ?? 0} completed this month`}
-              icon={TrendingUp}
-            />
-          </>
-        )}
-      </motion.div>
+      {/* Team Stats (for managers) */}
+      {/* Removed per user request */}
+
+      {/* Team Stats (for managers) */}
+      {!isLoading && data?.user.role === "MANAGER" && data?.teamData && (
+        <motion.div
+          variants={item}
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <StatCard title="Team size" value={data.teamData.teamSize} icon={UsersIcon} />
+          <StatCard
+            title="Goals in progress"
+            value={data.teamData.activeGoalsCount}
+            icon={TrendingUp}
+          />
+          <StatCard
+            title="Completed this week"
+            value={data.teamData.completedThisWeekCount}
+            icon={CheckCircle2}
+          />
+          <StatCard
+            title="Total completed"
+            value={data.teamData.completedGoalsCount}
+            icon={Target}
+          />
+        </motion.div>
+      )}
+
+      {/* Stat cards - Removed per user request */}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Active tasks */}
@@ -184,46 +161,44 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
+      </div>
 
-        {/* Upcoming deadlines */}
+      {/* Team Missed Deadlines (for managers) */}
+      {!isLoading && data?.user.role === "MANAGER" && data?.teamData && (
         <motion.div variants={item}>
           <Card className="rounded-xl shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlarmClock className="h-4 w-4" /> Upcoming Deadlines
+                <AlarmClock className="h-4 w-4 text-red-500" /> Team Missed Deadlines
               </CardTitle>
-              <CardDescription>Due in the next 14 days</CardDescription>
+              <CardDescription>Tasks from your team with overdue dates</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))
-              ) : data?.upcomingDeadlines.length === 0 ? (
+            <CardContent>
+              {data.teamData.missedDeadlines.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  Nothing due soon. Nice.
+                  No missed deadlines. Great job!
                 </p>
               ) : (
-                data?.upcomingDeadlines.map((goal: DashboardData["upcomingDeadlines"][number]) => (
-                  <div key={goal.id} className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm">{goal.title}</span>
-                    <Badge
-                      variant={
-                        goal.priority === "HIGH" || goal.priority === "CRITICAL"
-                          ? "destructive"
-                          : "outline"
-                      }
-                      className="shrink-0 text-xs"
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {data.teamData.missedDeadlines.map((deadline) => (
+                    <div
+                      key={deadline.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
                     >
-                      {goal.dueDate ? format(new Date(goal.dueDate), "MMM d") : "—"}
-                    </Badge>
-                  </div>
-                ))
+                      <span className="text-sm font-medium text-red-900 dark:text-red-100 truncate">
+                        {deadline.title}
+                      </span>
+                      <Badge variant="destructive" className="shrink-0 text-xs">
+                        {deadline.dueDate ? new Date(deadline.dueDate).toLocaleDateString() : "—"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Latest review */}

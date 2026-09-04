@@ -42,7 +42,7 @@ interface TaskCreateDialogProps {
 }
 
 const TEAMS = [
-  "Wipro Build People",
+  "Build People",
   "Engineering",
   "Treasury Products",
   "Accounting Portal",
@@ -70,10 +70,10 @@ export function TaskCreateDialog({
   const [status, setStatus] = useState<"TODO" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED">("TODO");
   const [assignedUserId, setAssignedUserId] = useState(defaultUserId || "");
   const selectedEmployee = employeesData?.employees.find((employee) => employee.id === assignedUserId);
-  const [owningTeam, setOwningTeam] = useState("Wipro Build People");
+  const [owningTeam, setOwningTeam] = useState("Build People");
   const [size, setSize] = useState("M");
   const [sprint, setSprint] = useState("Sprint 42");
-  const [project, setProject] = useState("Wipro Build People");
+  const [project, setProject] = useState("Build People");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)

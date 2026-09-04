@@ -19,8 +19,12 @@ export async function getDashboardData(userId: string) {
   const monthStart = startOfMonth(now);
   const in14Days = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { name: true, role: true, designation: true },
+  });
+
   const [
-    user,
     totalGoals,
     completedGoals,
     activeGoals,
@@ -32,10 +36,6 @@ export async function getDashboardData(userId: string) {
     recentActivities,
     latestSuggestion,
   ] = await Promise.all([
-    prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { name: true, role: true, designation: true },
-    }),
     prisma.goal.count({ where: { userId } }),
     prisma.goal.count({ where: { userId, status: "COMPLETED" } }),
     prisma.goal.findMany({
@@ -63,11 +63,11 @@ export async function getDashboardData(userId: string) {
       where: {
         userId,
         status: { not: "COMPLETED" },
-        dueDate: { gte: now, lte: in14Days },
+        dueDate: { lte: in14Days },
       },
       orderBy: { dueDate: "asc" },
-      take: 5,
-      select: { id: true, title: true, dueDate: true, priority: true, progress: true },
+      take: 10,
+      select: { id: true, title: true, dueDate: true, priority: true, progress: true, status: true },
     }),
     prisma.goal.count({
       where: { userId, status: "COMPLETED", updatedAt: { gte: weekStart } },
@@ -89,6 +89,53 @@ export async function getDashboardData(userId: string) {
 
   const completionRate = totalGoals === 0 ? 0 : Math.round((completedGoals / totalGoals) * 100);
 
+  // Get team data if user is a manager
+  let teamData = null;
+  if (user.role === "MANAGER") {
+    const team = await prisma.user.findMany({
+      where: { managerId: userId },
+      select: { id: true },
+    });
+    const teamIds = team.map((t) => t.id);
+
+    if (teamIds.length > 0) {
+      const [teamGoalsByStatus, teamCompletedThisWeek, teamMissedDeadlines] = await Promise.all([
+        prisma.goal.groupBy({
+          by: ["status"],
+          where: { userId: { in: teamIds } },
+          _count: { _all: true },
+        }),
+        prisma.goal.findMany({
+          where: {
+            userId: { in: teamIds },
+            status: "COMPLETED",
+            updatedAt: { gte: weekStart },
+          },
+          select: { id: true, title: true },
+        }),
+        prisma.goal.findMany({
+          where: {
+            userId: { in: teamIds },
+            status: { not: "COMPLETED" },
+            dueDate: { lt: now },
+          },
+          select: { id: true, title: true, dueDate: true },
+        }),
+      ]);
+
+      const activeCount = teamGoalsByStatus.find((g) => g.status === "IN_PROGRESS")?._count._all ?? 0;
+      const completedCount = teamGoalsByStatus.find((g) => g.status === "COMPLETED")?._count._all ?? 0;
+
+      teamData = {
+        teamSize: teamIds.length,
+        activeGoalsCount: activeCount,
+        completedGoalsCount: completedCount,
+        completedThisWeekCount: teamCompletedThisWeek.length,
+        missedDeadlines: teamMissedDeadlines,
+      };
+    }
+  }
+
   return {
     user: { name: user.name, role: user.role, designation: user.designation },
     stats: {
@@ -107,6 +154,7 @@ export async function getDashboardData(userId: string) {
     upcomingDeadlines: upcomingGoals,
     recentActivities,
     latestSuggestion,
+    teamData,
   };
 }
 

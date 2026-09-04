@@ -401,7 +401,7 @@ export function EmployeeTasksView({
                           {/* Project matching Image 2 */}
                           <div className="col-span-1 flex items-center gap-1 text-[11px] text-muted-foreground truncate">
                             <FolderGit2 className="h-3 w-3 text-blue-500 shrink-0" />
-                            <span className="truncate">{t.project || "Wipro Build People"}</span>
+                            <span className="truncate">{t.project || "Build People"}</span>
                           </div>
 
                           {/* Creator matching Image 2 */}

@@ -168,7 +168,7 @@ export function ManagerTasksView({
               </div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight text-foreground">
-                  Wipro Build People
+                  Build People
                 </h1>
                 <DropdownMenu>
                   <DropdownMenuTrigger

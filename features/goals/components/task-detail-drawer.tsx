@@ -87,7 +87,7 @@ interface TaskDetailDrawerProps {
 }
 
 const TEAMS = [
-  "Wipro Build People",
+  "Build People",
   "Engineering",
   "Treasury Products",
   "Accounting Portal",
@@ -116,10 +116,10 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
   const [status, setStatus] = useState<"TODO" | "IN_PROGRESS" | "BLOCKED" | "COMPLETED">("TODO");
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL">("MEDIUM");
   const [assignedUserId, setAssignedUserId] = useState<string>("");
-  const [owningTeam, setOwningTeam] = useState("Wipro Build People");
+  const [owningTeam, setOwningTeam] = useState("Build People");
   const [size, setSize] = useState("M");
   const [sprint, setSprint] = useState("Sprint 42");
-  const [project, setProject] = useState("Wipro Build People");
+  const [project, setProject] = useState("Build People");
   const [progress, setProgress] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -144,10 +144,10 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
       setStatus((task.status as any) || "TODO");
       setPriority((task.priority as any) || "MEDIUM");
       setAssignedUserId(task.userId || "");
-      setOwningTeam(task.owningTeam || "Wipro Build People");
+      setOwningTeam(task.owningTeam || "Build People");
       setSize(task.size || "M");
       setSprint(task.sprint || "Sprint 42");
-      setProject(task.project || "Wipro Build People");
+      setProject(task.project || "Build People");
       setProgress(task.progress || 0);
       setStartDate(task.startDate ? new Date(task.startDate).toISOString().slice(0, 10) : "");
       setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "");

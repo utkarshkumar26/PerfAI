@@ -18,7 +18,6 @@ const TYPE_META: Record<string, { label: string; icon: typeof Route }> = {
   PROMOTION: { label: "Promotion", icon: LineChartIcon },
   LEARNING: { label: "Learning Plan", icon: BookOpen },
   SALARY: { label: "Salary", icon: DollarSign },
-  INTERVIEW: { label: "Interview Prep", icon: Compass },
 };
 
 export function CareerPage() {
