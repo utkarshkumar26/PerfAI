@@ -26,7 +26,32 @@ export function handleApiError(error: unknown) {
   }
 
   const message = error instanceof Error ? error.message : String(error);
+  const name = error instanceof Error ? error.name : "";
+  const code =
+    typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+      ? error.code
+      : "";
   const lower = message.toLowerCase();
+
+  if (
+    name === "PrismaClientInitializationError" ||
+    code === "P1000" ||
+    code === "P1001" ||
+    code === "P1017" ||
+    lower.includes("environment variable not found: database_url") ||
+    lower.includes("can't reach database server")
+  ) {
+    console.error("[API Error] Database connection failed", error);
+    return fail(
+      "Cannot connect to the database. Set DATABASE_URL in Vercel and confirm Postgres is reachable.",
+      503
+    );
+  }
+
+  if (code === "P2021" || code === "P2022") {
+    console.error("[API Error] Database schema is missing", error);
+    return fail("Database schema is not applied. Run prisma migrate deploy on production.", 503);
+  }
 
   if (
     lower.includes("429") ||
@@ -38,12 +63,21 @@ export function handleApiError(error: unknown) {
     return fail("AI service is temporarily unavailable. Please try again later.", 503);
   }
 
-  if (lower.includes("api key") || lower.includes("not configured") || lower.includes("unauthorized")) {
+  if (lower.includes("api key") || lower.includes("openai") || lower.includes("gemini")) {
     return fail("AI service is not configured correctly. Please contact support.", 500);
   }
 
   console.error("[API Error]", error);
   return fail("Internal server error", 500);
+}
+
+export function requireDatabaseUrl() {
+  if (!process.env.DATABASE_URL) {
+    throw new ApiError(
+      503,
+      "Database is not configured. Set DATABASE_URL in Vercel environment variables, run migrations, then redeploy."
+    );
+  }
 }
 
 export function parseBody<S extends ZodSchema>(schema: S, body: unknown): z.output<S> {

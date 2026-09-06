@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cache } from "react";
+import type { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { ApiError } from "@/lib/api";
@@ -50,16 +51,33 @@ function decode(token: string): SessionPayload | null {
   return { userId, expiresAt };
 }
 
-export async function createSession(userId: string): Promise<void> {
-  const token = encode({ userId, expiresAt: Date.now() + SESSION_TTL_MS });
-  const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
+export function createSessionToken(userId: string): string {
+  return encode({ userId, expiresAt: Date.now() + SESSION_TTL_MS });
+}
+
+export function sessionCookieOptions() {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
-  });
+  };
+}
+
+export function applySessionCookie(response: NextResponse, userId: string) {
+  response.cookies.set(SESSION_COOKIE, createSessionToken(userId), sessionCookieOptions());
+  return response;
+}
+
+export function clearSessionCookie(response: NextResponse) {
+  response.cookies.set(SESSION_COOKIE, "", { ...sessionCookieOptions(), maxAge: 0 });
+  return response;
+}
+
+export async function createSession(userId: string): Promise<void> {
+  const store = await cookies();
+  store.set(SESSION_COOKIE, createSessionToken(userId), sessionCookieOptions());
 }
 
 export async function destroySession(): Promise<void> {

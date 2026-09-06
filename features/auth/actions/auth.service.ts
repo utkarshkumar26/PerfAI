@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/api";
+import { ApiError, requireDatabaseUrl } from "@/lib/api";
 import type { LoginInput, RegisterInput } from "../validations/auth.schema";
 
 const SALT_ROUNDS = 12;
@@ -35,6 +35,7 @@ export async function ensureDemoManager() {
 }
 
 export async function registerUser(input: RegisterInput) {
+  requireDatabaseUrl();
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new ApiError(409, "An account with this email already exists");
 
@@ -51,6 +52,7 @@ export async function registerUser(input: RegisterInput) {
 }
 
 export async function verifyCredentials(input: LoginInput) {
+  requireDatabaseUrl();
   const email = input.email.trim().toLowerCase();
   const role = input.role ?? "EMPLOYEE";
 

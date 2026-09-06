@@ -16,6 +16,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+beforeAll(() => {
+  process.env.DATABASE_URL ??= "postgresql://localhost:5432/perfai_test";
+});
+
 describe("verifyCredentials", () => {
   it("creates the default manager account when the seeded manager is missing", async () => {
     const createdUser = {
