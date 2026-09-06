@@ -125,12 +125,14 @@ export async function getDashboardData(userId: string) {
 
       const activeCount = teamGoalsByStatus.find((g) => g.status === "IN_PROGRESS")?._count._all ?? 0;
       const completedCount = teamGoalsByStatus.find((g) => g.status === "COMPLETED")?._count._all ?? 0;
+      const blockedCount = teamGoalsByStatus.find((g) => g.status === "BLOCKED")?._count._all ?? 0;
 
       teamData = {
         teamSize: teamIds.length,
         activeGoalsCount: activeCount,
         completedGoalsCount: completedCount,
         completedThisWeekCount: teamCompletedThisWeek.length,
+        blockedGoalsCount: blockedCount,
         missedDeadlines: teamMissedDeadlines,
       };
     }

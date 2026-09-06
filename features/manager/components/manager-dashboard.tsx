@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Users as UsersIcon, AlarmClock, TrendingUp, Trophy } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,13 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { StatCard } from "@/features/dashboard/components/stat-card";
 import { useEmployees, useTeamAnalytics } from "../actions/use-manager";
 import {
   Bar,
@@ -49,7 +48,7 @@ const PIE_COLORS = [
 
 export function ManagerDashboard() {
   const [search, setSearch] = useState("");
-  const { data: analytics, isLoading: loadingAnalytics } = useTeamAnalytics();
+  const { data: analytics } = useTeamAnalytics();
 
   return (
     <div className="space-y-6">
@@ -59,65 +58,6 @@ export function ManagerDashboard() {
           Manage employees, review performance and track team analytics
         </p>
       </div>
-
-      {/* Stats */}
-      {loadingAnalytics || !analytics ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Team size" value={analytics.headcount} icon={UsersIcon} />
-          <StatCard
-            title="Goals in progress"
-            value={
-              analytics.goalsByStatus.find((s) => s.status === "IN_PROGRESS")?.count ?? 0
-            }
-            icon={TrendingUp}
-          />
-          <StatCard
-            title="Due this week"
-            value={analytics.goalsDueThisWeek}
-            icon={AlarmClock}
-          />
-          <StatCard
-            title="Blocked"
-            value={analytics.goalsByStatus.find((s) => s.status === "BLOCKED")?.count ?? 0}
-            icon={Trophy}
-          />
-        </div>
-      )}
-
-      {/* Missed Deadlines */}
-      {analytics && analytics.missedDeadlines.length > 0 && (
-        <Card className="rounded-xl shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlarmClock className="h-4 w-4 text-red-500" /> Missed Deadlines
-            </CardTitle>
-            <CardDescription>Tasks that have overdue dates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {analytics.missedDeadlines.map((deadline) => (
-                <div
-                  key={deadline.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
-                >
-                  <span className="text-sm font-medium text-red-900 dark:text-red-100 truncate">
-                    {deadline.title}
-                  </span>
-                  <Badge variant="destructive" className="shrink-0 text-xs">
-                    {deadline.dueDate ? new Date(deadline.dueDate).toLocaleDateString() : "—"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Team table */}
       <Card className="rounded-xl shadow-sm">

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Target,
   ClipboardList,
   Compass,
   MessageSquare,
@@ -34,7 +33,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Career", href: "/career", icon: Compass },
   { label: "AI Assistant", href: "/chat", icon: MessageSquare },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Targets", href: "/targets", icon: Target },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Profile", href: "/profile", icon: User },
 ];

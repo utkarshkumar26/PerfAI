@@ -11,7 +11,6 @@ import {
   Compass,
   MessageSquare,
   BarChart3,
-  Target,
   Bell,
   User,
   LogOut,
@@ -35,7 +34,6 @@ const PAGES = [
   { label: "Career", href: "/career", icon: Compass },
   { label: "AI Assistant", href: "/chat", icon: MessageSquare },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Targets", href: "/targets", icon: Target },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Profile", href: "/profile", icon: User },
 ];

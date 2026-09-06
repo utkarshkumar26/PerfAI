@@ -31,34 +31,22 @@ export interface MonthlyAnalytics {
   weeklySeries: { week: string; completed: number }[];
 }
 
-export interface TargetAnalytics {
-  totalGoals: number;
-  completedGoals: number;
-  remaining: number;
-  completionPct: number;
-  weeklyTarget: { target: number; completed: number };
-  monthlyTarget: { target: number; completed: number };
-  performanceTrend: { month: string; rating: number | null }[];
-  achievementRate: number;
-}
-
-export function useWeeklyAnalytics() {
+export function useWeeklyAnalytics(userId?: string) {
+  const url = userId
+    ? `/api/analytics/weekly?userId=${encodeURIComponent(userId)}`
+    : "/api/analytics/weekly";
   return useQuery({
-    queryKey: ["analytics", "weekly"],
-    queryFn: () => request<WeeklyAnalytics>("/api/analytics/weekly"),
+    queryKey: ["analytics", "weekly", userId ?? "me"],
+    queryFn: () => request<WeeklyAnalytics>(url),
   });
 }
 
-export function useMonthlyAnalytics() {
+export function useMonthlyAnalytics(userId?: string) {
+  const url = userId
+    ? `/api/analytics/monthly?userId=${encodeURIComponent(userId)}`
+    : "/api/analytics/monthly";
   return useQuery({
-    queryKey: ["analytics", "monthly"],
-    queryFn: () => request<MonthlyAnalytics>("/api/analytics/monthly"),
-  });
-}
-
-export function useTargetAnalytics() {
-  return useQuery({
-    queryKey: ["analytics", "targets"],
-    queryFn: () => request<TargetAnalytics>("/api/analytics/targets"),
+    queryKey: ["analytics", "monthly", userId ?? "me"],
+    queryFn: () => request<MonthlyAnalytics>(url),
   });
 }

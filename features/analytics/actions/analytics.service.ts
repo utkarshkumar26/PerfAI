@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { User } from "@prisma/client";
+import type { User, Prisma } from "@prisma/client";
 import {
   startOfWeek,
   endOfWeek,
@@ -13,15 +13,31 @@ import {
   eachMonthOfInterval,
 } from "date-fns";
 
-function resolveUserId(user: User, queryUserId?: string) {
+async function resolveUserFilter(
+  user: User,
+  queryUserId?: string
+): Promise<Prisma.StringFilter | string> {
   const isManager = user.role === "MANAGER" || user.role === "ADMIN";
-  return isManager ? queryUserId ?? user.id : user.id;
+  if (!isManager || !queryUserId) {
+    return user.id;
+  }
+  if (queryUserId === "ALL") {
+    const whereUser: Prisma.UserWhereInput =
+      user.role === "MANAGER" ? { managerId: user.id } : { id: { not: user.id } };
+    const team = await prisma.user.findMany({
+      where: whereUser,
+      select: { id: true },
+    });
+    const ids = team.map((t) => t.id);
+    return { in: ids };
+  }
+  return queryUserId;
 }
 
 /* ------------------------------- Weekly ------------------------------- */
 
 export async function getWeeklyAnalytics(user: User, queryUserId?: string) {
-  const userId = resolveUserId(user, queryUserId);
+  const userId = await resolveUserFilter(user, queryUserId);
   const now = new Date();
   const ws = startOfWeek(now, { weekStartsOn: 1 });
   const we = endOfWeek(now, { weekStartsOn: 1 });
@@ -66,7 +82,7 @@ export async function getWeeklyAnalytics(user: User, queryUserId?: string) {
 /* ------------------------------- Monthly ------------------------------ */
 
 export async function getMonthlyAnalytics(user: User, queryUserId?: string) {
-  const userId = resolveUserId(user, queryUserId);
+  const userId = await resolveUserFilter(user, queryUserId);
   const now = new Date();
   const ms = startOfMonth(now);
   const me = endOfMonth(now);
@@ -121,69 +137,5 @@ export async function getMonthlyAnalytics(user: User, queryUserId?: string) {
     learningProgress: learningCount,
     goalsByStatus: goalByStatus.map((g) => ({ status: g.status, count: g._count._all })),
     weeklySeries,
-  };
-}
-
-/* ------------------------------- Targets ------------------------------ */
-
-export async function getTargetAnalytics(user: User, queryUserId?: string) {
-  const userId = resolveUserId(user, queryUserId);
-  const now = new Date();
-  const ms = startOfMonth(now);
-  const ws = startOfWeek(now, { weekStartsOn: 1 });
-  const sixMonthsAgo = subMonths(now, 6);
-
-  const [totalGoals, completedGoals, weeklyCompleted, monthlyCompleted, monthlyDue, ratingHistory] =
-    await Promise.all([
-      prisma.goal.count({ where: { userId } }),
-      prisma.goal.count({ where: { userId, status: "COMPLETED" } }),
-      prisma.goal.count({
-        where: { userId, status: "COMPLETED", updatedAt: { gte: ws } },
-      }),
-      prisma.goal.count({
-        where: { userId, status: "COMPLETED", updatedAt: { gte: ms } },
-      }),
-      prisma.goal.count({
-        where: { userId, dueDate: { gte: ms, lte: endOfMonth(now) } },
-      }),
-      prisma.review.findMany({
-        where: { userId, createdAt: { gte: sixMonthsAgo }, rating: { not: null } },
-        select: { rating: true, createdAt: true },
-        orderBy: { createdAt: "asc" },
-      }),
-    ]);
-
-  const months = eachMonthOfInterval({ start: sixMonthsAgo, end: now });
-  const performanceTrend = months.map((m) => {
-    const key = format(m, "yyyy-MM");
-    const matches = ratingHistory.filter(
-      (r) => format(r.createdAt, "yyyy-MM") === key
-    );
-    return {
-      month: format(m, "MMM"),
-      rating:
-        matches.length === 0
-          ? null
-          : Number(
-              (
-                matches.reduce((s, r) => s + (r.rating ?? 0), 0) / matches.length
-              ).toFixed(1)
-            ),
-    };
-  });
-
-  const remaining = Math.max(0, totalGoals - completedGoals);
-  const completionPct =
-    totalGoals === 0 ? 0 : Math.round((completedGoals / totalGoals) * 100);
-
-  return {
-    totalGoals,
-    completedGoals,
-    remaining,
-    completionPct,
-    weeklyTarget: { target: weeklyCompleted + 2, completed: weeklyCompleted },
-    monthlyTarget: { target: Math.max(monthlyDue, monthlyCompleted), completed: monthlyCompleted },
-    performanceTrend,
-    achievementRate: completionPct,
   };
 }

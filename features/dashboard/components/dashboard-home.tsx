@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Compass,
   Gauge,
+  Pause,
   Target,
   TrendingUp,
   Users as UsersIcon,
@@ -92,7 +93,7 @@ export function DashboardHome() {
           variants={item}
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
-          <StatCard title="Team size" value={data.teamData.teamSize} icon={UsersIcon} />
+          <StatCard title="Blocked" value={data.teamData.blockedGoalsCount ?? 0} icon={Pause} />
           <StatCard
             title="Goals in progress"
             value={data.teamData.activeGoalsCount}
