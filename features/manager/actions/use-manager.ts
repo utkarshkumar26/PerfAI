@@ -25,7 +25,12 @@ export interface TeamAnalytics {
   activeGoalsCount: number;
   completedGoalsCount: number;
   completedThisWeekCount: number;
-  missedDeadlines: { id: string; title: string; dueDate: Date | null; userId: string }[];
+  missedDeadlines: {
+    id: string;
+    title: string;
+    dueDate: Date | null;
+    user: { id: string; name: string; avatarUrl: string | null; designation: string | null };
+  }[];
   skillDistribution: { skill: string; count: number }[];
   topPerformers: { id: string; name: string; completedThisMonth: number; avgRating: number | null }[];
   monthlyPerformance: { month: string; avgRating: number | null }[];

@@ -84,7 +84,7 @@ export function ProfilePage() {
   const pct = completeness(form.getValues());
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="workspace-page mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16">
           <AvatarImage src={profile.avatarUrl ?? undefined} />
@@ -311,4 +311,3 @@ export function ProfilePage() {
     </div>
   );
 }
-

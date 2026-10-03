@@ -27,7 +27,7 @@ export function CareerPage() {
   const { data: selected, isLoading: loadingDetail } = useCareerSuggestion(selectedId ?? "");
 
   return (
-    <div className="space-y-4">
+    <div className="workspace-page space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Career Advisor</h1>

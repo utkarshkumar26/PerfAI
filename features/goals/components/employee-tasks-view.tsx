@@ -144,9 +144,9 @@ export function EmployeeTasksView({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="workspace-page tasks-workspace space-y-5">
       {/* Top Header Card matching Image 2 */}
-      <div className="border-b pb-3 space-y-3">
+      <div className="tasks-header-panel space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* My Tasks Title & View Tabs */}
           <div className="flex items-center gap-4">
@@ -228,7 +228,7 @@ export function EmployeeTasksView({
       </div>
 
       {/* Sub-bar: Task Count & Find Search */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="tasks-toolbar flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-muted-foreground">
             {filteredTasks.length} {filteredTasks.length === 1 ? "Task" : "Tasks"}
@@ -255,9 +255,9 @@ export function EmployeeTasksView({
       </div>
 
       {/* Main Task List with Collapsible Sections matching Image 2 */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="tasks-table rounded-xl border bg-card shadow-sm overflow-hidden">
         {/* Table Column Headers */}
-        <div className="grid grid-cols-12 gap-2 border-b bg-muted/40 px-4 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="tasks-table-header grid grid-cols-12 gap-2 border-b bg-muted/40 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
           <div className="col-span-5 flex items-center gap-1.5 pl-6">
             <span>Title</span>
           </div>
@@ -276,11 +276,11 @@ export function EmployeeTasksView({
             const secTasks = tasksBySection[sec.id] || [];
 
             return (
-              <div key={sec.id} className="bg-background">
+              <div key={sec.id} className="tasks-employee-group bg-background">
                 {/* Section Accordion Header matching Image 2 */}
                 <div
                   onClick={() => toggleSection(sec.id)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-muted/20 hover:bg-muted/40 cursor-pointer select-none transition-colors"
+                  className="tasks-group-heading flex items-center gap-2 px-4 py-3 bg-muted/20 hover:bg-muted/40 cursor-pointer select-none transition-colors"
                 >
                   <button className="text-muted-foreground hover:text-foreground">
                     {isCollapsed ? (
@@ -306,7 +306,7 @@ export function EmployeeTasksView({
                         <div
                           key={t.id}
                           onClick={() => onSelectTask(t)}
-                          className="grid grid-cols-12 gap-2 items-center px-4 py-2 border-t hover:bg-muted/40 cursor-pointer transition-colors text-xs group"
+                          className="tasks-task-row grid grid-cols-12 gap-2 items-center px-4 py-2.5 border-t hover:bg-muted/40 cursor-pointer transition-colors text-xs group"
                         >
                           {/* Title & Checkbox */}
                           <div className="col-span-5 flex items-center gap-2.5 pl-6">

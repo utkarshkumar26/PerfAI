@@ -119,7 +119,13 @@ export async function getDashboardData(userId: string) {
             status: { not: "COMPLETED" },
             dueDate: { lt: now },
           },
-          select: { id: true, title: true, dueDate: true },
+          orderBy: { dueDate: "asc" },
+          select: {
+            id: true,
+            title: true,
+            dueDate: true,
+            user: { select: { id: true, name: true, avatarUrl: true, designation: true } },
+          },
         }),
       ]);
 

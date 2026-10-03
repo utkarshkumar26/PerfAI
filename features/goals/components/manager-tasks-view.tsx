@@ -151,13 +151,13 @@ export function ManagerTasksView({
   const totalMembers = employees.length > 0 ? employees.length : 36;
 
   return (
-    <div className="space-y-4">
+    <div className="workspace-page tasks-workspace space-y-5">
       {/* Top Header Card */}
-      <div className="border-b pb-3 space-y-3">
+      <div className="tasks-header-panel space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Team Overview Title & Meta */}
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground border shadow-sm">
+            <div className="tasks-heading-mark flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-foreground border shadow-sm">
               <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -167,7 +167,7 @@ export function ManagerTasksView({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   Build People
                 </h1>
                 <DropdownMenu>
@@ -240,7 +240,7 @@ export function ManagerTasksView({
         </div>
 
         {/* View Tabs matching Image 1 */}
-        <div className="flex items-center gap-1 overflow-x-auto pt-1 no-scrollbar border-t">
+        <div className="tasks-tabs-strip flex items-center gap-1 overflow-x-auto pt-1 no-scrollbar border-t">
           {TABS.map((tab) => {
             const active = activeTab === tab;
             return (
@@ -263,7 +263,7 @@ export function ManagerTasksView({
 
       {/* Info Alert Banner matching Image 1 */}
       {showAlert && (
-        <div className="flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900/60 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-200">
+        <div className="tasks-oncall-alert flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900/60 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-200">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>
@@ -286,7 +286,7 @@ export function ManagerTasksView({
       )}
 
       {/* Sub-toolbar Bar: Search, Filters, Add Custom Field, Create Task */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="tasks-toolbar flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Find Search */}
           <div className="relative">
@@ -358,9 +358,9 @@ export function ManagerTasksView({
       </div>
 
       {/* Main Employee-Grouped Task Table */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="tasks-table rounded-xl border bg-card shadow-sm overflow-hidden">
         {/* Table Header Columns matching Image 1 */}
-        <div className="grid grid-cols-12 gap-2 border-b bg-muted/40 px-4 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="tasks-table-header grid grid-cols-12 gap-2 border-b bg-muted/40 px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
           <div className="col-span-5 flex items-center gap-2">
             <span>Name</span>
             <ArrowUpDown className="h-3 w-3 opacity-50" />
@@ -383,11 +383,11 @@ export function ManagerTasksView({
             const empTasks = tasksByEmployee[employee.id] || [];
 
             return (
-              <div key={employee.id} className="bg-background">
+              <div key={employee.id} className="tasks-employee-group bg-background">
                 {/* Group Accordion Header matching Image 1 */}
                 <div
                   onClick={() => toggleGroup(employee.id)}
-                  className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/40 cursor-pointer select-none transition-colors border-l-4 border-l-amber-500/70"
+                  className="tasks-group-heading flex items-center justify-between px-4 py-3 hover:bg-muted/40 cursor-pointer select-none transition-colors border-l-4 border-l-amber-500/70"
                 >
                   <div className="flex items-center gap-2.5">
                     <button className="text-muted-foreground p-0.5 hover:text-foreground">
@@ -456,7 +456,7 @@ export function ManagerTasksView({
 
                 {/* Expanded Tasks List for this Employee */}
                 {!isCollapsed && (
-                  <div className="bg-muted/10">
+                  <div className="tasks-group-rows bg-muted/10">
                     {empTasks.map((t) => {
                       const isSelected = !!selectedTasks[t.id];
 
@@ -465,7 +465,7 @@ export function ManagerTasksView({
                           key={t.id}
                           onClick={() => onSelectTask(t)}
                           className={cn(
-                            "grid grid-cols-12 gap-2 items-center px-4 py-2 border-t hover:bg-muted/50 cursor-pointer transition-colors text-xs",
+                            "tasks-task-row grid grid-cols-12 gap-2 items-center px-4 py-2.5 border-t hover:bg-muted/50 cursor-pointer transition-colors text-xs",
                             isSelected && "bg-primary/5"
                           )}
                         >

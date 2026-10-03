@@ -73,7 +73,7 @@ export function ChatPage() {
   };
 
   return (
-    <div className="grid h-[calc(100vh-8rem)] gap-4 md:grid-cols-[260px_1fr]">
+    <div className="workspace-page workspace-chat grid h-[calc(100vh-8rem)] gap-4 md:grid-cols-[260px_1fr]">
       {/* Conversation list */}
       <Card className="hidden rounded-xl shadow-sm md:flex md:flex-col">
         <CardHeader className="pb-3">

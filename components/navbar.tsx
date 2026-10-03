@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import Link from "next/link";
+import { Bell, ClipboardList, LogOut, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -24,6 +25,7 @@ export function Navbar() {
   const { data: user } = useSession();
   const logout = useLogout();
   const router = useRouter();
+  const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { data: unread } = useQuery({
     queryKey: ["notifications", "count"],
@@ -43,7 +45,7 @@ export function Navbar() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
+    <header className="app-navbar sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
       {/* Mobile nav */}
       <Sheet>
         <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu" />}>
@@ -67,6 +69,14 @@ export function Navbar() {
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       <div className="ml-auto flex items-center gap-1">
+        {pathname === "/dashboard" && (
+          <Button asChild variant="outline" size="sm" className="mr-1 h-8 gap-1.5 px-2.5 text-xs">
+            <Link href="/tasks">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Current Tasks
+            </Link>
+          </Button>
+        )}
         <ThemeToggle />
         <Button
           variant="ghost"

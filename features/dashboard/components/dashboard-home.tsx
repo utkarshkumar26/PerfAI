@@ -8,16 +8,13 @@ import {
   Award,
   CheckCircle2,
   Compass,
-  Gauge,
   Pause,
   Target,
   TrendingUp,
-  Users as UsersIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "../actions/use-dashboard";
@@ -56,30 +53,33 @@ export function DashboardHome() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="space-y-6"
+      className="workspace-page dashboard-page space-y-6"
     >
       {/* Welcome */}
       <motion.div variants={item}>
-        <Card className="relative overflow-hidden rounded-xl border-primary/15 bg-gradient-to-br from-primary/8 via-card to-card">
-          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-primary/10 to-transparent md:block" />
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              {isLoading ? (
-                <Skeleton className="h-7 w-64" />
-              ) : (
-                `Welcome back, ${data?.user.name.split(" ")[0]}`
-              )}
-            </CardTitle>
-            <CardDescription>
-              {isLoading ? (
-                <Skeleton className="h-4 w-48" />
-              ) : (
-                <span>
-                  {data?.user.designation ?? "Team member"} ·{" "}
-                  {format(new Date(), "EEEE, MMMM d")}
-                </span>
-              )}
-            </CardDescription>
+        <Card className="dashboard-welcome-card relative overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-violet-500/5">
+          <div className="dashboard-welcome-glow pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block" />
+          <CardHeader className="dashboard-welcome-content relative z-10">
+            <div className="dashboard-welcome-line">
+              <p className="dashboard-welcome-eyebrow text-xs font-semibold uppercase tracking-[0.18em] text-primary">Performance overview</p>
+              <CardTitle className="text-2xl tracking-tight">
+                {isLoading ? (
+                  <Skeleton className="h-7 w-64" />
+                ) : (
+                  `Welcome back, ${data?.user.name.split(" ")[0]}`
+                )}
+              </CardTitle>
+              <CardDescription className="dashboard-welcome-description">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-48" />
+                ) : (
+                  <span>
+                    {data?.user.designation ?? "Team member"} ·{" "}
+                    {format(new Date(), "EEEE, MMMM d")}
+                  </span>
+                )}
+              </CardDescription>
+            </div>
           </CardHeader>
         </Card>
       </motion.div>
@@ -91,124 +91,49 @@ export function DashboardHome() {
       {!isLoading && data?.user.role === "MANAGER" && data?.teamData && (
         <motion.div
           variants={item}
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="dashboard-stats grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
-          <StatCard title="Blocked" value={data.teamData.blockedGoalsCount ?? 0} icon={Pause} />
+          <div className="dashboard-stat-card dashboard-stat-blocked">
+            <StatCard title="Blocked" value={data.teamData.blockedGoalsCount ?? 0} icon={Pause} href="/analytics" />
+          </div>
+          <div className="dashboard-stat-card dashboard-stat-progress">
           <StatCard
             title="Goals in progress"
             value={data.teamData.activeGoalsCount}
             icon={TrendingUp}
+            href="/analytics"
           />
+          </div>
+          <div className="dashboard-stat-card dashboard-stat-weekly">
           <StatCard
             title="Completed this week"
             value={data.teamData.completedThisWeekCount}
             icon={CheckCircle2}
+            href="/analytics"
           />
+          </div>
+          <div className="dashboard-stat-card dashboard-stat-completed">
           <StatCard
             title="Total completed"
             value={data.teamData.completedGoalsCount}
             icon={Target}
+            href="/analytics"
           />
+          </div>
         </motion.div>
       )}
 
       {/* Stat cards - Removed per user request */}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Active tasks */}
-        <motion.div variants={item} className="lg:col-span-2">
-          <Card className="rounded-xl shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Current Tasks</CardTitle>
-                <CardDescription>Your work in progress</CardDescription>
-              </div>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/tasks">View all</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))
-              ) : data?.activeGoals.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <Target className="h-8 w-8 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">
-                    No active tasks yet. Create your first task to get started.
-                  </p>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href="/tasks?new=1">Create task</Link>
-                  </Button>
-                </div>
-              ) : (
-                data?.activeGoals.map((goal: DashboardData["activeGoals"][number]) => (
-                  <div key={goal.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium">{goal.title}</span>
-                      <Badge variant="secondary" className="shrink-0 text-xs">
-                        {goal.status.replace("_", " ")}
-                      </Badge>
-                    </div>
-                    <Progress value={goal.progress} className="h-1.5" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{goal.category ?? "General"}</span>
-                      <span>{goal.progress}%</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Team Missed Deadlines (for managers) */}
-      {!isLoading && data?.user.role === "MANAGER" && data?.teamData && (
-        <motion.div variants={item}>
-          <Card className="rounded-xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlarmClock className="h-4 w-4 text-red-500" /> Team Missed Deadlines
-              </CardTitle>
-              <CardDescription>Tasks from your team with overdue dates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.teamData.missedDeadlines.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No missed deadlines. Great job!
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {data.teamData.missedDeadlines.map((deadline) => (
-                    <div
-                      key={deadline.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800"
-                    >
-                      <span className="text-sm font-medium text-red-900 dark:text-red-100 truncate">
-                        {deadline.title}
-                      </span>
-                      <Badge variant="destructive" className="shrink-0 text-xs">
-                        {deadline.dueDate ? new Date(deadline.dueDate).toLocaleDateString() : "—"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="dashboard-feature-grid grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* Latest review */}
-        <motion.div variants={item}>
-          <Card className="rounded-xl shadow-sm">
+        <motion.div variants={item} className="dashboard-feature-card dashboard-review-card h-full">
+          <Card className="h-full rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Award className="h-4 w-4" /> Latest Review
+                <span className="dashboard-card-icon"><Award className="h-4 w-4" /></span> Latest Review
               </CardTitle>
+              <CardDescription>Your performance review at a glance</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -229,11 +154,11 @@ export function DashboardHome() {
                   </Button>
                 </div>
               ) : (
-                <div className="py-4 text-center">
-                  <p className="text-sm text-muted-foreground">
+                <div className="py-1 text-center">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     No reviews yet. Generate your first AI performance review.
                   </p>
-                  <Button asChild size="sm" variant="outline" className="mt-3">
+                  <Button asChild size="sm" variant="outline" className="mt-2">
                     <Link href="/reviews?new=1">Generate review</Link>
                   </Button>
                 </div>
@@ -243,12 +168,13 @@ export function DashboardHome() {
         </motion.div>
 
         {/* AI career suggestion */}
-        <motion.div variants={item}>
-          <Card className="rounded-xl shadow-sm">
+        <motion.div variants={item} className="dashboard-feature-card dashboard-career-card h-full">
+          <Card className="h-full rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Compass className="h-4 w-4" /> AI Career Suggestion
+                <span className="dashboard-card-icon"><Compass className="h-4 w-4" /></span> AI Career Suggestion
               </CardTitle>
+              <CardDescription>Guidance for your next career step</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -266,11 +192,11 @@ export function DashboardHome() {
                   </Button>
                 </div>
               ) : (
-                <div className="py-4 text-center">
-                  <p className="text-sm text-muted-foreground">
+                <div className="py-1 text-center">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     Get AI-powered career guidance tailored to your goals.
                   </p>
-                  <Button asChild size="sm" variant="outline" className="mt-3">
+                  <Button asChild size="sm" variant="outline" className="mt-2">
                     <Link href="/career">Get guidance</Link>
                   </Button>
                 </div>
@@ -280,12 +206,13 @@ export function DashboardHome() {
         </motion.div>
 
         {/* Recent activity */}
-        <motion.div variants={item}>
-          <Card className="rounded-xl shadow-sm">
+        <motion.div variants={item} className="dashboard-feature-card dashboard-activity-card h-full">
+          <Card className="h-full rounded-2xl border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4" /> Recent Activity
+                <span className="dashboard-card-icon"><Activity className="h-4 w-4" /></span> Recent Activity
               </CardTitle>
+              <CardDescription>Your latest updates</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -295,9 +222,9 @@ export function DashboardHome() {
                   No activity yet.
                 </p>
               ) : (
-                <ul className="space-y-3">
+                <ul className="dashboard-activity-list max-h-24 space-y-1.5 overflow-y-auto pr-1">
                   {data?.recentActivities.map((a: DashboardData["recentActivities"][number]) => (
-                    <li key={a.id} className="flex items-start justify-between gap-2 text-sm">
+                    <li key={a.id} className="dashboard-activity-item flex items-start justify-between gap-2 text-sm">
                       <span className="text-muted-foreground">
                         {a.action.replaceAll("_", " ").toLowerCase()}
                       </span>
@@ -311,7 +238,78 @@ export function DashboardHome() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Create a task */}
+        <motion.div variants={item} className="dashboard-feature-card dashboard-create-card h-full">
+          <Card className="h-full rounded-2xl border-primary/20 bg-gradient-to-br from-primary/[0.1] via-card to-violet-500/[0.09] shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="dashboard-card-icon flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Target className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <CardTitle>Create a Task</CardTitle>
+                  <CardDescription className="mt-1 line-clamp-2">
+                    Plan your next goal or assign work to a teammate.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="mt-auto grid grid-cols-2 gap-2">
+              <Button asChild size="sm" className="w-full text-xs">
+                <Link href="/tasks?new=1">Create a task</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="w-full bg-background/70 text-xs">
+                <Link href="/tasks">Open task board</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
+
+      {/* Team Missed Deadlines (for managers) */}
+      {!isLoading && data?.user.role === "MANAGER" && data?.teamData && (
+        <motion.div variants={item}>
+          <Card className="dashboard-deadlines-card rounded-2xl border-red-200/70 shadow-sm dark:border-red-900/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <AlarmClock className="h-4 w-4 text-red-500" /> Team Missed Deadlines
+              </CardTitle>
+              <CardDescription className="text-xs">Overdue work that may need attention</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {data.teamData.missedDeadlines.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No missed deadlines. Great job!
+                </p>
+              ) : (
+                <div className="max-h-[26rem] space-y-2 overflow-y-auto pr-1">
+                  {data.teamData.missedDeadlines.map((deadline) => (
+                    <Link
+                      key={deadline.id}
+                      href={`/tasks?task=${encodeURIComponent(deadline.id)}`}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-red-200/80 bg-red-50/80 p-2.5 transition-colors hover:border-red-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-800/80 dark:bg-red-950/40 dark:hover:bg-red-950"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-red-900 dark:text-red-100">
+                          {deadline.title}
+                        </p>
+                        <p className="mt-1 truncate text-[11px] text-red-800/80 dark:text-red-200/80">
+                          {deadline.user.name}
+                          {deadline.user.designation ? ` · ${deadline.user.designation}` : ""}
+                        </p>
+                      </div>
+                      <Badge variant="destructive" className="shrink-0 text-xs">
+                        {deadline.dueDate ? new Date(deadline.dueDate).toLocaleDateString() : "—"}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

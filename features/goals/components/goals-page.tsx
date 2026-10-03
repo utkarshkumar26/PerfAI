@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGoals, type GoalFilters, type GoalWithUsers } from "../actions/use-goals";
 import { useSession } from "@/features/auth/actions/use-auth";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 export function GoalsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { data: user, isLoading: loadingSession } = useSession();
 
   const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
@@ -36,6 +37,10 @@ export function GoalsPage() {
   const [aiOpen, setAiOpen] = useState(false);
 
   const allTasks = data?.goals ?? [];
+  const linkedTaskId = searchParams.get("task");
+  const linkedTask = linkedTaskId
+    ? allTasks.find((goal) => goal.id === linkedTaskId) ?? null
+    : null;
 
   // Filter tasks if manager switches to "My Tasks"
   const displayTasks =
@@ -61,7 +66,7 @@ export function GoalsPage() {
 
   if (isLoading || loadingSession) {
     return (
-      <div className="space-y-4">
+      <div className="tasks-page space-y-5">
         <Skeleton className="h-14 w-full rounded-xl" />
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -73,17 +78,17 @@ export function GoalsPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="workspace-page space-y-5">
       {/* Manager View Switcher Tab (Only shown to managers) */}
       {isManager && (
-        <div className="flex items-center justify-end">
-          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border text-xs">
+        <div className="tasks-view-switcher flex items-center justify-end">
+          <div className="tasks-view-switcher-control flex items-center gap-1 bg-muted p-1 rounded-lg border text-xs">
             <button
               onClick={() => setManagerActiveView("team")}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold transition-colors",
                 managerActiveView === "team"
-                  ? "bg-background text-foreground shadow-xs"
+                  ? "tasks-view-switcher-active bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -95,7 +100,7 @@ export function GoalsPage() {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold transition-colors",
                 managerActiveView === "my_tasks"
-                  ? "bg-background text-foreground shadow-xs"
+                  ? "tasks-view-switcher-active bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -124,11 +129,16 @@ export function GoalsPage() {
 
       {/* Rich Task Detail Drawer (Image 3) */}
       <TaskDetailDrawer
-        task={selectedTask}
-        open={drawerOpen}
+        task={selectedTask ?? linkedTask}
+        open={drawerOpen || Boolean(linkedTask)}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) setSelectedTask(null);
+          if (!open) {
+            setSelectedTask(null);
+            if (searchParams.has("task")) {
+              router.replace("/tasks");
+            }
+          }
         }}
       />
 
@@ -145,4 +155,3 @@ export function GoalsPage() {
     </div>
   );
 }
-

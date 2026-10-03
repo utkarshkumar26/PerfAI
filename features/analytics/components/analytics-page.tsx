@@ -58,7 +58,7 @@ export function AnalyticsPage() {
 
   if (loadingSession) {
     return (
-      <div className="space-y-4">
+      <div className="workspace-page space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-96" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 pt-4">
@@ -73,7 +73,7 @@ export function AnalyticsPage() {
   // If regular employee, render standard personal analytics page
   if (!isManager) {
     return (
-      <div className="space-y-4">
+      <div className="workspace-page space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Performance Analytics</h1>
           <p className="text-sm text-muted-foreground">
@@ -101,7 +101,7 @@ export function AnalyticsPage() {
   const selectedEmployee = employees.find((e) => e.id === selectedUserId);
 
   return (
-    <div className="space-y-6">
+    <div className="workspace-page space-y-6">
       {/* Top Header with Employee Dropdown */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -218,7 +218,7 @@ function ManagerCombinedAnalytics({
   if (isLoading) return <AnalyticsSkeleton count={6} />;
 
   return (
-    <div className="space-y-6">
+    <div className="workspace-page space-y-6">
       {/* Top Combined Team Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
