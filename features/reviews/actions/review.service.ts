@@ -43,7 +43,7 @@ export async function getReview(user: User, id: string) {
   return sanitizeReview(user, review);
 }
 
-function sanitizeReview(user: User, review: { rating: number | null; annualPerformance: string | null; overallPerformanceFeedback: string | null; finalAppraisal: string | null; incrementEligibility: string | null; performanceEligibility: string | null; [key: string]: unknown }) {
+function sanitizeReview(user: User, review: { rating: number | null; annualPerformance: string | null; overallPerformanceFeedback: string | null; finalAppraisal: string | null; incrementEligibility: string | null; performanceEligibility: string | null;[key: string]: unknown }) {
   const isManager = user.role === "MANAGER" || user.role === "ADMIN";
   if (isManager) return review;
   const {

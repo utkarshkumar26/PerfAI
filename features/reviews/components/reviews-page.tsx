@@ -34,7 +34,7 @@ export function ReviewsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Performance Reviews</h1>
-            <p className="text-sm text-muted-foreground">Submit and track your Mid-Year and Final-Year reviews.</p>
+          <p className="text-sm text-muted-foreground">Submit and track your Mid-Year and Final-Year reviews.</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setDrawerOpen(true)}>
@@ -55,7 +55,7 @@ export function ReviewsPage() {
           <p className="text-sm text-muted-foreground">
             No reviews yet. Submit your first review.
           </p>
-            <Button onClick={() => setDrawerOpen(true)} variant="outline" size="sm">
+          <Button onClick={() => setDrawerOpen(true)} variant="outline" size="sm">
             <Plus /> Start review
           </Button>
         </div>
