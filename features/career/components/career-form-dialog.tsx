@@ -207,7 +207,7 @@ export function CareerFormDialog({
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={generate.isPending}>
+            <Button type="submit" className="ai-feature-button w-full" disabled={generate.isPending}>
               {generate.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
               {generate.isPending ? "Generating..." : "Generate guidance"}
             </Button>

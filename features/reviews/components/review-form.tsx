@@ -50,7 +50,7 @@ export function ReviewFormDrawer({ open, onOpenChange, review, defaultType = "MI
   };
   const busy = create.isPending || update.isPending;
   const text = (key: keyof ReviewValues, label: string, placeholder: string, required = false) => (
-    <div className="space-y-1.5"><label className="text-sm font-medium">{label}{required && " *"}</label><Textarea required={required} value={String(values[key])} placeholder={placeholder} onChange={(event) => set(key, event.target.value)} /><Button type="button" variant="outline" size="sm" onClick={() => polishField(key)} disabled={polish.isPending || !String(values[key]).trim()}><Sparkles /> Polish with AI</Button></div>
+    <div className="space-y-1.5"><label className="text-sm font-medium">{label}{required && " *"}</label><Textarea required={required} value={String(values[key])} placeholder={placeholder} onChange={(event) => set(key, event.target.value)} /><Button type="button" variant="outline" size="sm" className="ai-feature-button" onClick={() => polishField(key)} disabled={polish.isPending || !String(values[key]).trim()}><Sparkles /> Polish with AI</Button></div>
   );
 
   return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl"><SheetHeader><SheetTitle>{review ? "Resubmit Review" : "Employee Review"}</SheetTitle><SheetDescription>Complete exactly two points in each objectives section before submitting.</SheetDescription></SheetHeader><form onSubmit={submit} className="space-y-5 px-4 pb-6">

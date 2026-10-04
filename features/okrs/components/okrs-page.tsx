@@ -164,6 +164,7 @@ function ObjectiveCard({
           <Button
             variant="ghost"
             size="sm"
+            className="ai-feature-button"
             aria-label="AI advice"
             disabled={advice.isPending}
             onClick={() => advice.mutate(o.id)}

@@ -389,12 +389,12 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
               size="sm"
               onClick={handleSolveWithAI}
               disabled={solveAiMutation.isPending}
-              className="h-8 gap-1.5 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary font-medium text-xs rounded-md shadow-none"
+              className="ai-feature-button h-8 gap-1.5 font-semibold text-xs rounded-md"
             >
               {solveAiMutation.isPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <Sparkles className="h-3.5 w-3.5" />
               )}
               Solve task with AI
             </Button>
@@ -717,7 +717,7 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAiGenerator(!showAiGenerator)}
-                className="h-7 gap-1.5 text-xs font-semibold border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary shadow-xs"
+                className="ai-feature-button h-7 gap-1.5 text-xs font-semibold shadow-xs"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Generate with AI</span>
@@ -760,7 +760,7 @@ export function TaskDetailDrawer({ task, open, onOpenChange }: TaskDetailDrawerP
                       size="sm"
                       onClick={handleGenerateDescription}
                       disabled={generateDescMutation.isPending}
-                      className="h-7 text-xs font-semibold gap-1.5 shadow-sm"
+                      className="ai-feature-button h-7 text-xs font-semibold gap-1.5 shadow-sm"
                     >
                       {generateDescMutation.isPending ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

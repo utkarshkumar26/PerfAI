@@ -146,7 +146,7 @@ export function AIGoalSuggestionDialog({
               )}
             />
             <div className="sm:col-span-2">
-              <Button type="submit" disabled={suggest.isPending}>
+              <Button type="submit" className="ai-feature-button" disabled={suggest.isPending}>
                 {suggest.isPending ? (
                   <Loader2 className="animate-spin" />
                 ) : (

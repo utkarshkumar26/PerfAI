@@ -346,7 +346,7 @@ export function TaskCreateDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAiGenerator(!showAiGenerator)}
-                className="h-6 gap-1 text-[11px] font-semibold border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-2 shadow-none"
+                className="ai-feature-button h-7 gap-1.5 text-xs font-semibold px-2.5 shadow-sm"
               >
                 <Sparkles className="h-3 w-3" />
                 Generate with AI
@@ -385,7 +385,7 @@ export function TaskCreateDialog({
                     size="sm"
                     onClick={handleGenerateDescription}
                     disabled={generateDescMutation.isPending}
-                    className="h-6 text-[11px] font-semibold gap-1"
+                    className="ai-feature-button h-7 text-xs font-semibold gap-1.5"
                   >
                     {generateDescMutation.isPending ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
