@@ -109,10 +109,10 @@ model Goal {
   approved    Boolean    @default(false)
 
   section            String?   @default("ASSIGNED") // ASSIGNED | DOING | LATER
-  project            String?   @default("Build People")
+  project            String?   @default("Built People")
   size               String?   @default("M") // XS | S | M | L | XL
   sprint             String?   @default("Sprint 42")
-  owningTeam         String?   @default("Build People")
+  owningTeam         String?   @default("Built People")
   bugType            String?
   sectionOrTab       String?
   descriptionIfOther String?

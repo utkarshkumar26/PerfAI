@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const parsed = reviewQuerySchema.safeParse({
       type: searchParams.get("type") ?? undefined,
       userId: searchParams.get("userId") ?? undefined,
+      cursor: searchParams.get("cursor") ?? undefined,
+      pageSize: searchParams.get("pageSize") ?? undefined,
     });
     if (!parsed.success) {
       return fail("Invalid query parameters", 422, parsed.error.flatten().fieldErrors);

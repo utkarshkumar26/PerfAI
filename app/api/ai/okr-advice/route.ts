@@ -4,10 +4,14 @@ import { requireUser } from "@/features/auth/actions/session";
 import { prisma } from "@/lib/prisma";
 import { getAIProvider, parseAIJson } from "@/services/ai/provider";
 import { OKR_ADVICE_SYSTEM } from "@/features/ai/prompts";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
+    const rateLimit = await enforceRateLimit("ai-user", user.id);
+    if (rateLimit) return rateLimit;
+
     const { objectiveId } = (await request.json()) as { objectiveId?: string };
     if (!objectiveId) throw new ApiError(400, "objectiveId is required");
 

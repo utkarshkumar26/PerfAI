@@ -31,6 +31,8 @@ export const employeeReviewSchema = z.object({
 export const reviewQuerySchema = z.object({
   type: z.enum(["WEEKLY", "MONTHLY", "QUARTERLY", "ANNUAL", "MANUAL"]).optional(),
   userId: z.string().uuid().optional(),
+  cursor: z.string().max(256).optional(),
+  pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const updateReviewSchema = z.object({

@@ -17,10 +17,10 @@ export const createGoalSchema = z.object({
   userId: z.string().uuid().optional(), // managers assign to employees
 
   section: z.string().max(100).optional().default("ASSIGNED"),
-  project: z.string().max(100).optional().default("Build People"),
+  project: z.string().max(100).optional().default("Built People"),
   size: z.string().max(20).optional().default("M"),
   sprint: z.string().max(100).optional().default("Sprint 42"),
-  owningTeam: z.string().max(100).optional().default("Build People"),
+  owningTeam: z.string().max(100).optional().default("Built People"),
   bugType: z.string().max(200).optional().nullable(),
   sectionOrTab: z.string().max(200).optional().nullable(),
   descriptionIfOther: z.string().max(2000).optional().nullable(),
@@ -68,5 +68,4 @@ export type CreateGoalInput = z.input<typeof createGoalSchema>;
 export type UpdateGoalInput = z.input<typeof updateGoalSchema>;
 export type GoalQuery = z.infer<typeof goalQuerySchema>;
 export type AIGoalSuggestionInput = z.infer<typeof aiGoalSuggestionSchema>;
-
 

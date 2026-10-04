@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { format } from "date-fns";
 import {
   AlarmClock,
@@ -9,12 +8,11 @@ import {
   ClipboardList,
   Goal,
   MessageSquare,
-  Star,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Notification } from "@prisma/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -37,9 +35,26 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function useNotifications() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["notifications"],
-    queryFn: () => request<Notification[]>("/api/notifications"),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (pageParam) params.set("cursor", pageParam);
+      return request<{
+        items: Notification[];
+        nextCursor: string | null;
+        hasMore: boolean;
+      }>(`/api/notifications?${params}`);
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+}
+
+function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: ["notifications", "count"],
+    queryFn: () => request<{ count: number }>("/api/notifications/count"),
   });
 }
 
@@ -74,10 +89,19 @@ export function useMarkAllRead() {
 }
 
 export function NotificationsPage() {
-  const { data: notifications, isLoading } = useNotifications();
+  const {
+    data,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useNotifications();
+  const notifications = data?.pages.flatMap((page) => page.items) ?? [];
+  const unreadCount = useUnreadNotificationCount();
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();
-  const unread = notifications?.filter((n) => !n.read).length ?? 0;
+  const unreadOnLoadedPages = notifications.filter((n) => !n.read).length;
+  const unread = unreadCount.data?.count ?? unreadOnLoadedPages;
 
   return (
     <div className="workspace-page space-y-5">
@@ -85,13 +109,13 @@ export function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
           <p className="text-sm text-muted-foreground">
-            {unread} unread of {notifications?.length ?? 0}
+            {unread} unread; showing {notifications.length}
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => markAllRead.mutate()}
-          disabled={unread === 0 || markAllRead.isPending}
+          disabled={unreadCount.isLoading || unread === 0 || markAllRead.isPending}
         >
           <CheckCheck /> Mark all read
         </Button>
@@ -105,13 +129,13 @@ export function NotificationsPage() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ))
-          ) : notifications?.length === 0 ? (
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-16 text-center">
               <Bell className="h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">You're all caught up.</p>
+              <p className="text-sm text-muted-foreground">You are all caught up.</p>
             </div>
           ) : (
-            notifications?.map((n) => {
+            notifications.map((n) => {
               const Icon = ICONS[n.type] ?? Bell;
               return (
                 <button
@@ -148,6 +172,17 @@ export function NotificationsPage() {
           )}
         </CardContent>
       </Card>
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? "Loading..." : "Load more notifications"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,9 +9,24 @@ const updateMock = jest.fn();
 const deleteMock = jest.fn();
 const activityCreateMock = jest.fn();
 const notificationCreateMock = jest.fn();
+const transactionClient = {
+  goal: {
+    findUnique: (...args: unknown[]) => findUniqueMock(...args),
+    create: jest.fn(),
+    update: (...args: unknown[]) => updateMock(...args),
+    delete: (...args: unknown[]) => deleteMock(...args),
+  },
+  activityLog: { create: (...args: unknown[]) => activityCreateMock(...args) },
+  notification: { create: (...args: unknown[]) => notificationCreateMock(...args) },
+};
+const transactionMock = jest.fn(
+  (callback: (tx: typeof transactionClient) => Promise<unknown>) => callback(transactionClient)
+);
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    $transaction: (callback: (tx: typeof transactionClient) => Promise<unknown>) =>
+      transactionMock(callback),
     goal: {
       findUnique: (...args: unknown[]) => findUniqueMock(...args),
       update: (...args: unknown[]) => updateMock(...args),
@@ -70,6 +85,7 @@ describe("updateGoal permissions", () => {
 
   it("allows owner to complete own goal and notifies", async () => {
     await updateGoal(EMPLOYEE, "goal-1", { status: "COMPLETED" });
+    expect(transactionMock).toHaveBeenCalledTimes(1);
     expect(updateMock).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ progress: 100 }) })
     );
@@ -86,6 +102,7 @@ describe("deleteGoal permissions", () => {
 
   it("allows owner to delete", async () => {
     await deleteGoal(EMPLOYEE, "goal-1");
+    expect(transactionMock).toHaveBeenCalledTimes(1);
     expect(deleteMock).toHaveBeenCalledWith({ where: { id: "goal-1" } });
   });
 });

@@ -34,7 +34,7 @@ type Workstream = {
 
 const workstreams: Record<string, Workstream> = {
   quality: {
-    project: "Build People",
+    project: "Built People",
     tasks: [
       {
         title: "Expand regression coverage for employee task workflows",
@@ -83,7 +83,7 @@ const workstreams: Record<string, Workstream> = {
     },
   },
   frontend: {
-    project: "Build People",
+    project: "Built People",
     tasks: [
       {
         title: "Improve keyboard navigation in task detail and edit flows",
@@ -132,7 +132,7 @@ const workstreams: Record<string, Workstream> = {
     },
   },
   backend: {
-    project: "Build People",
+    project: "Built People",
     tasks: [
       {
         title: "Reduce repeated lookups in the team task summary endpoint",
@@ -181,7 +181,7 @@ const workstreams: Record<string, Workstream> = {
     },
   },
   platform: {
-    project: "Build People",
+    project: "Built People",
     tasks: [
       {
         title: "Document the deployment health-check and rollback sequence",
@@ -230,7 +230,7 @@ const workstreams: Record<string, Workstream> = {
     },
   },
   fullstack: {
-    project: "Build People",
+    project: "Built People",
     tasks: [
       {
         title: "Streamline task assignment validation and feedback",
@@ -399,7 +399,7 @@ async function main() {
           project: workstream.project,
           size: task.status === "COMPLETED" ? "M" : "L",
           sprint: "Sprint 45",
-          owningTeam: "Build People",
+          owningTeam: "Built People",
           startDate: task.startDate,
           dueDate: task.dueDate,
           userId: employee.id,

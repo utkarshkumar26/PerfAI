@@ -1,5 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/lib/api";
+import {
+  analyticsCacheKey,
+  readAnalyticsCache,
+  writeAnalyticsCache,
+} from "./analytics-cache";
 import type { User, Prisma } from "@prisma/client";
 import {
   startOfWeek,
@@ -7,11 +13,31 @@ import {
   startOfMonth,
   endOfMonth,
   subWeeks,
-  subMonths,
   format,
   eachDayOfInterval,
-  eachMonthOfInterval,
 } from "date-fns";
+
+interface WeeklyAnalyticsResult {
+  period: string;
+  assigned: number;
+  completed: number;
+  pending: number;
+  blocked: number;
+  completionRate: number;
+  reviews: number;
+  perDaySeries: { day: string; completed: number }[];
+}
+
+interface MonthlyAnalyticsResult {
+  period: string;
+  goalsAssigned: number;
+  goalsCompleted: number;
+  reviewsGenerated: number;
+  avgReviewScore: number | null;
+  learningProgress: number;
+  goalsByStatus: { status: string; count: number }[];
+  weeklySeries: { week: string; completed: number }[];
+}
 
 async function resolveUserFilter(
   user: User,
@@ -31,16 +57,36 @@ async function resolveUserFilter(
     const ids = team.map((t) => t.id);
     return { in: ids };
   }
+  if (user.role === "MANAGER") {
+    const report = await prisma.user.findFirst({
+      where: { id: queryUserId, managerId: user.id },
+      select: { id: true },
+    });
+    if (!report) throw new ApiError(403, "You do not have access to this employee's analytics");
+  }
   return queryUserId;
 }
 
 /* ------------------------------- Weekly ------------------------------- */
 
-export async function getWeeklyAnalytics(user: User, queryUserId?: string) {
+export async function getWeeklyAnalytics(
+  user: User,
+  queryUserId?: string
+): Promise<WeeklyAnalyticsResult> {
   const userId = await resolveUserFilter(user, queryUserId);
   const now = new Date();
   const ws = startOfWeek(now, { weekStartsOn: 1 });
   const we = endOfWeek(now, { weekStartsOn: 1 });
+
+  const cacheKey = analyticsCacheKey([
+    "weekly",
+    user.id,
+    user.role,
+    queryUserId ?? "self",
+    format(ws, "yyyy-MM-dd"),
+  ]);
+  const cached = await readAnalyticsCache<WeeklyAnalyticsResult>(cacheKey);
+  if (cached !== undefined) return cached;
 
   const [assigned, completed, pending, blocked, reviews] = await Promise.all([
     prisma.goal.count({ where: { userId, createdAt: { gte: ws, lte: we } } }),
@@ -67,7 +113,7 @@ export async function getWeeklyAnalytics(user: User, queryUserId?: string) {
   const completionRate =
     assigned + pending === 0 ? 0 : Math.round((completed / (assigned + pending)) * 100);
 
-  return {
+  const result = {
     period: `${format(ws, "MMM d")} – ${format(we, "MMM d")}`,
     assigned,
     completed,
@@ -77,15 +123,30 @@ export async function getWeeklyAnalytics(user: User, queryUserId?: string) {
     reviews,
     perDaySeries: perDay,
   };
+  await writeAnalyticsCache(cacheKey, 30, result);
+  return result;
 }
 
 /* ------------------------------- Monthly ------------------------------ */
 
-export async function getMonthlyAnalytics(user: User, queryUserId?: string) {
+export async function getMonthlyAnalytics(
+  user: User,
+  queryUserId?: string
+): Promise<MonthlyAnalyticsResult> {
   const userId = await resolveUserFilter(user, queryUserId);
   const now = new Date();
   const ms = startOfMonth(now);
   const me = endOfMonth(now);
+
+  const cacheKey = analyticsCacheKey([
+    "monthly",
+    user.id,
+    user.role,
+    queryUserId ?? "self",
+    format(ms, "yyyy-MM"),
+  ]);
+  const cached = await readAnalyticsCache<MonthlyAnalyticsResult>(cacheKey);
+  if (cached !== undefined) return cached;
 
   const [goalsAssigned, goalsCompleted, reviews, avgRating, learningCount, goalByStatus] =
     await Promise.all([
@@ -128,7 +189,7 @@ export async function getMonthlyAnalytics(user: User, queryUserId?: string) {
     };
   });
 
-  return {
+  const result = {
     period: format(now, "MMMM yyyy"),
     goalsAssigned,
     goalsCompleted,
@@ -138,4 +199,6 @@ export async function getMonthlyAnalytics(user: User, queryUserId?: string) {
     goalsByStatus: goalByStatus.map((g) => ({ status: g.status, count: g._count._all })),
     weeklySeries,
   };
+  await writeAnalyticsCache(cacheKey, 60, result);
+  return result;
 }

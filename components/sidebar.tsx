@@ -44,7 +44,7 @@ const MANAGER_ITEM: NavItem = {
   managerOnly: true,
 };
 
-export function Sidebar() {
+export function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
   const { data: user } = useSession();
 
@@ -54,7 +54,12 @@ export function Sidebar() {
       : NAV_ITEMS;
 
   return (
-    <aside className="app-sidebar hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+    <aside
+      className={cn(
+        "app-sidebar shrink-0 flex-col border-r border-sidebar-border bg-sidebar",
+        mobile ? "flex h-full w-full" : "hidden w-64 md:flex"
+      )}
+    >
       <div className="flex h-14 items-center gap-2.5 px-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
           <Gauge className="h-4 w-4" />

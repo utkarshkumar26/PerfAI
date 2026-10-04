@@ -94,7 +94,6 @@ export async function getGoal(user: User, id: string) {
 }
 
 export async function createGoal(user: User, input: CreateGoalInput) {
-  const isManager = user.role === "MANAGER" || user.role === "ADMIN";
   let ownerId = user.id;
   let assignedById: string | null = null;
 
@@ -105,65 +104,67 @@ export async function createGoal(user: User, input: CreateGoalInput) {
 
   const taskNumber = input.taskNumber || generateTaskNumber();
 
-  const goal = await prisma.goal.create({
-    data: {
-      taskNumber,
-      title: input.title,
-      description: input.description,
-      priority: input.priority,
-      status: input.status,
-      category: input.category,
-      dueDate: input.dueDate,
-      startDate: input.startDate || new Date(),
-      progress: input.progress,
-      notes: input.notes,
-      section: input.section || "ASSIGNED",
-      project: input.project || "Build People",
-      size: input.size || "M",
-      sprint: input.sprint || "Sprint 42",
-      owningTeam: input.owningTeam || "Build People",
-      bugType: input.bugType,
-      sectionOrTab: input.sectionOrTab,
-      descriptionIfOther: input.descriptionIfOther,
-      reproSteps: input.reproSteps,
-      expectedResult: input.expectedResult,
-      actualResult: input.actualResult,
-      debugInfo: input.debugInfo as Prisma.InputJsonValue ?? Prisma.JsonNull,
-      comments: input.comments as Prisma.InputJsonValue ?? [],
-      starred: input.starred ?? false,
-      userId: ownerId,
-      assignedById,
-      approved: !assignedById, // self-created tasks are auto-approved
-    },
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, designation: true, email: true } },
-      assignedBy: { select: { id: true, name: true, avatarUrl: true } },
-    },
-  });
-
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      action: "TASK_CREATED",
-      entity: "Goal",
-      entityId: goal.id,
-      metadata: { title: goal.title, taskNumber },
-    },
-  });
-
-  if (assignedById && ownerId !== user.id) {
-    await prisma.notification.create({
+  return prisma.$transaction(async (tx) => {
+    const goal = await tx.goal.create({
       data: {
+        taskNumber,
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        status: input.status,
+        category: input.category,
+        dueDate: input.dueDate,
+        startDate: input.startDate || new Date(),
+        progress: input.progress,
+        notes: input.notes,
+        section: input.section || "ASSIGNED",
+        project: input.project || "Built People",
+        size: input.size || "M",
+        sprint: input.sprint || "Sprint 42",
+        owningTeam: input.owningTeam || "Built People",
+        bugType: input.bugType,
+        sectionOrTab: input.sectionOrTab,
+        descriptionIfOther: input.descriptionIfOther,
+        reproSteps: input.reproSteps,
+        expectedResult: input.expectedResult,
+        actualResult: input.actualResult,
+        debugInfo: input.debugInfo as Prisma.InputJsonValue ?? Prisma.JsonNull,
+        comments: input.comments as Prisma.InputJsonValue ?? [],
+        starred: input.starred ?? false,
         userId: ownerId,
-        type: "MANAGER_FEEDBACK",
-        title: "New task assigned",
-        message: `${user.name} assigned you the task "${goal.title}"`,
-        link: `/tasks`,
+        assignedById,
+        approved: !assignedById,
+      },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true, designation: true, email: true } },
+        assignedBy: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
-  }
 
-  return goal;
+    await tx.activityLog.create({
+      data: {
+        userId: user.id,
+        action: "TASK_CREATED",
+        entity: "Goal",
+        entityId: goal.id,
+        metadata: { title: goal.title, taskNumber },
+      },
+    });
+
+    if (assignedById && ownerId !== user.id) {
+      await tx.notification.create({
+        data: {
+          userId: ownerId,
+          type: "MANAGER_FEEDBACK",
+          title: "New task assigned",
+          message: `${user.name} assigned you the task "${goal.title}"`,
+          link: `/tasks`,
+        },
+      });
+    }
+
+    return goal;
+  });
 }
 
 function assertCanView(user: User, ownerId: string) {
@@ -222,83 +223,85 @@ export async function updateGoal(user: User, id: string, input: UpdateGoalInput)
   const newAssignedById =
     input.userId && input.userId !== existing.userId ? user.id : existing.assignedById;
 
-  const goal = await prisma.goal.update({
-    where: { id },
-    data: {
-      title: input.title !== undefined ? input.title : existing.title,
-      description: input.description !== undefined ? input.description : existing.description,
-      priority: input.priority !== undefined ? input.priority : existing.priority,
-      status: input.status !== undefined ? input.status : existing.status,
-      category: input.category !== undefined ? input.category : existing.category,
-      dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
-      startDate: input.startDate !== undefined ? input.startDate : existing.startDate,
-      progress: willComplete ? 100 : (input.progress !== undefined ? input.progress : existing.progress),
-      notes: input.notes !== undefined ? input.notes : existing.notes,
-      approved: input.approved !== undefined ? input.approved : existing.approved,
-      section: input.section !== undefined ? input.section : existing.section,
-      project: input.project !== undefined ? input.project : existing.project,
-      size: input.size !== undefined ? input.size : existing.size,
-      sprint: input.sprint !== undefined ? input.sprint : existing.sprint,
-      owningTeam: input.owningTeam !== undefined ? input.owningTeam : existing.owningTeam,
-      bugType: input.bugType !== undefined ? input.bugType : existing.bugType,
-      sectionOrTab: input.sectionOrTab !== undefined ? input.sectionOrTab : existing.sectionOrTab,
-      descriptionIfOther: input.descriptionIfOther !== undefined ? input.descriptionIfOther : existing.descriptionIfOther,
-      reproSteps: input.reproSteps !== undefined ? input.reproSteps : existing.reproSteps,
-      expectedResult: input.expectedResult !== undefined ? input.expectedResult : existing.expectedResult,
-      actualResult: input.actualResult !== undefined ? input.actualResult : existing.actualResult,
-      debugInfo:
-        input.debugInfo !== undefined
-          ? input.debugInfo === null
-            ? Prisma.DbNull
-            : (input.debugInfo as Prisma.InputJsonValue)
-          : existing.debugInfo === null
-          ? Prisma.DbNull
-          : (existing.debugInfo as Prisma.InputJsonValue),
-      comments: (updatedComments as unknown as Prisma.InputJsonValue) ?? [],
-      starred: input.starred !== undefined ? input.starred : existing.starred,
-      userId: newUserId,
-      assignedById: newAssignedById,
-    },
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, designation: true, email: true } },
-      assignedBy: { select: { id: true, name: true, avatarUrl: true } },
-    },
-  });
-
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      action: willComplete && !wasCompleted ? "TASK_COMPLETED" : "TASK_UPDATED",
-      entity: "Goal",
-      entityId: goal.id,
-      metadata: { title: goal.title, status: goal.status },
-    },
-  });
-
-  if (willComplete && !wasCompleted) {
-    await prisma.notification.create({
+  return prisma.$transaction(async (tx) => {
+    const goal = await tx.goal.update({
+      where: { id },
       data: {
-        userId: goal.userId,
-        type: "GOAL_COMPLETED",
-        title: "Task completed",
-        message: `"${goal.title}" has been marked complete.`,
-        link: `/tasks`,
+        title: input.title !== undefined ? input.title : existing.title,
+        description: input.description !== undefined ? input.description : existing.description,
+        priority: input.priority !== undefined ? input.priority : existing.priority,
+        status: input.status !== undefined ? input.status : existing.status,
+        category: input.category !== undefined ? input.category : existing.category,
+        dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
+        startDate: input.startDate !== undefined ? input.startDate : existing.startDate,
+        progress: willComplete ? 100 : (input.progress !== undefined ? input.progress : existing.progress),
+        notes: input.notes !== undefined ? input.notes : existing.notes,
+        approved: input.approved !== undefined ? input.approved : existing.approved,
+        section: input.section !== undefined ? input.section : existing.section,
+        project: input.project !== undefined ? input.project : existing.project,
+        size: input.size !== undefined ? input.size : existing.size,
+        sprint: input.sprint !== undefined ? input.sprint : existing.sprint,
+        owningTeam: input.owningTeam !== undefined ? input.owningTeam : existing.owningTeam,
+        bugType: input.bugType !== undefined ? input.bugType : existing.bugType,
+        sectionOrTab: input.sectionOrTab !== undefined ? input.sectionOrTab : existing.sectionOrTab,
+        descriptionIfOther: input.descriptionIfOther !== undefined ? input.descriptionIfOther : existing.descriptionIfOther,
+        reproSteps: input.reproSteps !== undefined ? input.reproSteps : existing.reproSteps,
+        expectedResult: input.expectedResult !== undefined ? input.expectedResult : existing.expectedResult,
+        actualResult: input.actualResult !== undefined ? input.actualResult : existing.actualResult,
+        debugInfo:
+          input.debugInfo !== undefined
+            ? input.debugInfo === null
+              ? Prisma.DbNull
+              : (input.debugInfo as Prisma.InputJsonValue)
+            : existing.debugInfo === null
+            ? Prisma.DbNull
+            : (existing.debugInfo as Prisma.InputJsonValue),
+        comments: (updatedComments as unknown as Prisma.InputJsonValue) ?? [],
+        starred: input.starred !== undefined ? input.starred : existing.starred,
+        userId: newUserId,
+        assignedById: newAssignedById,
+      },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true, designation: true, email: true } },
+        assignedBy: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
-    if (existing.assignedById) {
-      await prisma.notification.create({
+
+    await tx.activityLog.create({
+      data: {
+        userId: user.id,
+        action: willComplete && !wasCompleted ? "TASK_COMPLETED" : "TASK_UPDATED",
+        entity: "Goal",
+        entityId: goal.id,
+        metadata: { title: goal.title, status: goal.status },
+      },
+    });
+
+    if (willComplete && !wasCompleted) {
+      await tx.notification.create({
         data: {
-          userId: existing.assignedById,
+          userId: goal.userId,
           type: "GOAL_COMPLETED",
-          title: "Assigned task completed",
-          message: `A task you assigned was completed: "${goal.title}"`,
+          title: "Task completed",
+          message: `"${goal.title}" has been marked complete.`,
           link: `/tasks`,
         },
       });
+      if (existing.assignedById) {
+        await tx.notification.create({
+          data: {
+            userId: existing.assignedById,
+            type: "GOAL_COMPLETED",
+            title: "Assigned task completed",
+            message: `A task you assigned was completed: "${goal.title}"`,
+            link: `/tasks`,
+          },
+        });
+      }
     }
-  }
 
-  return goal;
+    return goal;
+  });
 }
 
 export async function deleteGoal(user: User, id: string) {
@@ -306,15 +309,16 @@ export async function deleteGoal(user: User, id: string) {
   if (!existing) throw new ApiError(404, "Task not found");
   assertCanModify(user, existing.userId, existing.assignedById);
 
-  await prisma.goal.delete({ where: { id } });
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      action: "TASK_DELETED",
-      entity: "Goal",
-      entityId: id,
-      metadata: { title: existing.title },
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.goal.delete({ where: { id } });
+    await tx.activityLog.create({
+      data: {
+        userId: user.id,
+        action: "TASK_DELETED",
+        entity: "Goal",
+        entityId: id,
+        metadata: { title: existing.title },
+      },
+    });
   });
 }
-

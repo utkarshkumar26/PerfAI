@@ -2,10 +2,14 @@ import { NextRequest } from "next/server";
 import { ok, handleApiError } from "@/lib/api";
 import { requireUser } from "@/features/auth/actions/session";
 import { getAIProvider, parseAIJson } from "@/services/ai/provider";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
+    const rateLimit = await enforceRateLimit("ai-user", user.id);
+    if (rateLimit) return rateLimit;
+
     const body = await request.json();
 
     const provider = getAIProvider();

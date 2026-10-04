@@ -2,7 +2,8 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api";
-import type { User } from "@prisma/client";
+import { decodeDateCursor, encodeDateCursor } from "@/lib/date-cursor";
+import type { Prisma, User } from "@prisma/client";
 import type {
   EmployeeReviewInput,
   ReviewInput,
@@ -15,18 +16,50 @@ type ReviewComment = { id: string; authorName: string; text: string; createdAt: 
 export async function listReviews(user: User, query: ReviewQuery) {
   const isManager = user.role === "MANAGER" || user.role === "ADMIN";
   const userId = isManager ? query.userId : user.id;
+  if (user.role === "MANAGER" && userId) {
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { managerId: true },
+    });
+    if (!target) throw new ApiError(404, "Employee not found");
+    assertManagerAccess(user, target);
+  }
 
   const where = {
     ...(userId ? { userId } : isManager && user.role === "MANAGER" ? { user: { managerId: user.id } } : {}),
     ...(query.type ? { type: query.type } : {}),
   };
 
-  const reviews = await prisma.review.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
+  const cursor = decodeDateCursor(query.cursor);
+  const pageWhere = cursor
+    ? {
+        AND: [
+          where,
+          {
+            OR: [
+              { createdAt: { lt: cursor.createdAt } },
+              { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+            ],
+          },
+        ],
+      }
+    : where;
+  const results = await prisma.review.findMany({
+    where: pageWhere,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: query.pageSize + 1,
     include: { user: { select: { id: true, name: true, avatarUrl: true } } },
   });
-  return reviews.map((review) => sanitizeReview(user, review));
+  const hasMore = results.length > query.pageSize;
+  const reviews = results.slice(0, query.pageSize);
+  const lastReview = reviews.at(-1);
+  return {
+    items: reviews.map((review) => sanitizeReview(user, review)),
+    nextCursor: hasMore && lastReview
+      ? encodeDateCursor({ id: lastReview.id, createdAt: lastReview.createdAt })
+      : null,
+    hasMore,
+  };
 }
 
 export async function getReview(user: User, id: string) {
@@ -65,9 +98,15 @@ function assertManagerAccess(user: User, reviewUser: { managerId: string | null 
   }
 }
 
-async function notify(userId: string | null | undefined, title: string, message: string, reviewId: string) {
+async function notify(
+  userId: string | null | undefined,
+  title: string,
+  message: string,
+  reviewId: string,
+  tx: Pick<Prisma.TransactionClient, "notification"> = prisma
+) {
   if (!userId) return;
-  await prisma.notification.create({
+  await tx.notification.create({
     data: { userId, type: "MANAGER_FEEDBACK", title, message, link: `/reviews/${reviewId}` },
   });
 }
@@ -129,35 +168,69 @@ export async function updateReview(user: User, id: string, input: UpdateReviewIn
   }
   const employeeInput = input.employeeData ? JSON.parse(JSON.stringify(input.employeeData)) : undefined;
   const nextInput = employeeInput ? { ...(review.input as object), ...employeeInput } : undefined;
-  const updated = await prisma.review.update({
-    where: { id },
-    data: {
-      content: input.content ?? review.content,
-      rating: isManager ? input.rating : review.rating,
-      actionPlan: input.actionPlan ?? review.actionPlan,
-      input: nextInput ?? undefined,
-      status,
-      submittedAt: status === "PENDING" ? new Date() : review.submittedAt,
-      comments: comments as any,
-      annualPerformance: isManager ? input.annualPerformance : review.annualPerformance,
-      overallPerformanceFeedback: isManager ? input.overallPerformanceFeedback : review.overallPerformanceFeedback,
-      finalAppraisal: isManager ? input.finalAppraisal : review.finalAppraisal,
-      incrementEligibility: isManager ? input.incrementEligibility : review.incrementEligibility,
-      performanceEligibility: isManager ? input.performanceEligibility : review.performanceEligibility,
-    },
-    include: { user: { select: { id: true, name: true, avatarUrl: true, managerId: true } } },
+  const updated = await prisma.$transaction(async (tx) => {
+    const updated = await tx.review.update({
+      where: { id },
+      data: {
+        content: input.content ?? review.content,
+        rating: isManager ? input.rating : review.rating,
+        actionPlan: input.actionPlan ?? review.actionPlan,
+        input: nextInput ?? undefined,
+        status,
+        submittedAt: status === "PENDING" ? new Date() : review.submittedAt,
+        comments: comments as Prisma.InputJsonValue,
+        annualPerformance: isManager ? input.annualPerformance : review.annualPerformance,
+        overallPerformanceFeedback: isManager ? input.overallPerformanceFeedback : review.overallPerformanceFeedback,
+        finalAppraisal: isManager ? input.finalAppraisal : review.finalAppraisal,
+        incrementEligibility: isManager ? input.incrementEligibility : review.incrementEligibility,
+        performanceEligibility: isManager ? input.performanceEligibility : review.performanceEligibility,
+      },
+      include: { user: { select: { id: true, name: true, avatarUrl: true, managerId: true } } },
+    });
+
+    if (input.action === "SUBMIT") {
+      await notify(
+        review.user.managerId,
+        "Review resubmitted",
+        `${user.name} has resubmitted their ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review after modification.`,
+        id,
+        tx
+      );
+    } else if (input.action === "APPROVE") {
+      await notify(
+        review.userId,
+        "Review approved",
+        `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review has been approved by your manager.`,
+        id,
+        tx
+      );
+    } else if (input.action === "REJECT") {
+      await notify(
+        review.userId,
+        "Review rejected",
+        `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review has been rejected. Please review the manager's comments.`,
+        id,
+        tx
+      );
+    } else if (input.action === "REQUEST_MODIFICATION") {
+      await notify(
+        review.userId,
+        "Review requires modification",
+        `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review requires modification. Please review your manager's comments and resubmit.`,
+        id,
+        tx
+      );
+    } else if (input.action === "COMMENT") {
+      await notify(
+        review.userId,
+        "New review comment",
+        "Your manager has added a comment to your review.",
+        id,
+        tx
+      );
+    }
+    return updated;
   });
-  if (input.action === "SUBMIT") {
-    await notify(review.user.managerId, "Review resubmitted", `${user.name} has resubmitted their ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review after modification.`, id);
-  } else if (input.action === "APPROVE") {
-    await notify(review.userId, "Review approved", `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review has been approved by your manager.`, id);
-  } else if (input.action === "REJECT") {
-    await notify(review.userId, "Review rejected", `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review has been rejected. Please review the manager's comments.`, id);
-  } else if (input.action === "REQUEST_MODIFICATION") {
-    await notify(review.userId, "Review requires modification", `Your ${review.type === "MID_YEAR" ? "Mid-Year" : "Final-Year"} Review requires modification. Please review your manager's comments and resubmit.`, id);
-  } else if (input.action === "COMMENT") {
-    await notify(review.userId, "New review comment", "Your manager has added a comment to your review.", id);
-  }
   return sanitizeReview(user, updated);
 }
 
@@ -184,41 +257,43 @@ export async function saveGeneratedReview(
   input: ReviewInput,
   generated: GeneratedReview
 ) {
-  const review = await prisma.review.create({
-    data: {
-      period: input.period,
-      type: input.type,
-      input: JSON.parse(JSON.stringify(input)),
-      content: generated.review,
-      strengths: generated.strengths,
-      weaknesses: generated.weaknesses,
-      growthAreas: generated.growthAreas,
-      actionPlan: generated.actionPlan,
-      rating: Math.min(5, Math.max(1, generated.rating)),
-      aiGenerated: true,
-      userId: user.id,
-    },
-  });
+  return prisma.$transaction(async (tx) => {
+    const review = await tx.review.create({
+      data: {
+        period: input.period,
+        type: input.type,
+        input: JSON.parse(JSON.stringify(input)),
+        content: generated.review,
+        strengths: generated.strengths,
+        weaknesses: generated.weaknesses,
+        growthAreas: generated.growthAreas,
+        actionPlan: generated.actionPlan,
+        rating: Math.min(5, Math.max(1, generated.rating)),
+        aiGenerated: true,
+        userId: user.id,
+      },
+    });
 
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      action: "REVIEW_GENERATED",
-      entity: "Review",
-      entityId: review.id,
-      metadata: { period: review.period, rating: review.rating },
-    },
-  });
+    await tx.activityLog.create({
+      data: {
+        userId: user.id,
+        action: "REVIEW_GENERATED",
+        entity: "Review",
+        entityId: review.id,
+        metadata: { period: review.period, rating: review.rating },
+      },
+    });
 
-  await prisma.notification.create({
-    data: {
-      userId: user.id,
-      type: "REVIEW_READY",
-      title: "Review ready",
-      message: `Your AI performance review for ${review.period} is ready.`,
-      link: `/reviews/${review.id}`,
-    },
-  });
+    await tx.notification.create({
+      data: {
+        userId: user.id,
+        type: "REVIEW_READY",
+        title: "Review ready",
+        message: `Your AI performance review for ${review.period} is ready.`,
+        link: `/reviews/${review.id}`,
+      },
+    });
 
-  return review;
+    return review;
+  });
 }

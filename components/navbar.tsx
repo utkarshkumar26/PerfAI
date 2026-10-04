@@ -27,15 +27,28 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const { data: unread } = useQuery({
+  const { data: unreadCount } = useQuery<{ count: number }>({
     queryKey: ["notifications", "count"],
     queryFn: async () => {
       const res = await fetch("/api/notifications/count");
-      const json = await res.json();
-      return json.success ? (json.data.count as number) : 0;
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: { count?: unknown };
+        error?: string;
+      };
+      if (!res.ok || !json.success) {
+        throw new Error(json.error ?? "Could not load notification count");
+      }
+
+      const count = json.data?.count;
+      if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
+        throw new Error("Invalid notification count response");
+      }
+      return { count };
     },
     refetchInterval: 60_000,
   });
+  const unread = unreadCount?.count;
 
   const initials = (user?.name ?? "?")
     .split(" ")
@@ -53,7 +66,7 @@ export function Navbar() {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <Sidebar />
+          <Sidebar mobile />
         </SheetContent>
       </Sheet>
 

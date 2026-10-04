@@ -3,12 +3,16 @@ import { z } from "zod";
 import { ok, handleApiError, parseBody } from "@/lib/api";
 import { requireUser } from "@/features/auth/actions/session";
 import { getAIProvider } from "@/services/ai/provider";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const polishSchema = z.object({ text: z.string().min(1).max(5000) });
 
 export async function POST(request: NextRequest) {
   try {
-    await requireUser();
+    const user = await requireUser();
+    const rateLimit = await enforceRateLimit("ai-user", user.id);
+    if (rateLimit) return rateLimit;
+
     const { text } = parseBody(polishSchema, await request.json());
     const prompt = "You polish workplace review text. Preserve the exact meaning, facts, numbers, and tone. Never invent or add information. Return only the polished text, with no quotes or explanation.";
     let polished = "";

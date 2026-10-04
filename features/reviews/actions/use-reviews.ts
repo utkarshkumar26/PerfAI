@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Review, User } from "@prisma/client";
 import type { EmployeeReviewInput, ReviewInput, UpdateReviewInput } from "../validations/review.schema";
@@ -10,6 +10,11 @@ export type ReviewWithUser = Review & {
 };
 
 export type ReviewInputData = Partial<EmployeeReviewInput> & Record<string, unknown>;
+export interface ReviewPage {
+  items: ReviewWithUser[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
@@ -19,18 +24,29 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function useReviews(filters: { type?: string } = {}) {
-  const params = new URLSearchParams();
-  if (filters.type) params.set("type", filters.type);
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["reviews", filters],
-    queryFn: () => request<ReviewWithUser[]>(`/api/reviews?${params}`),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (filters.type) params.set("type", filters.type);
+      if (pageParam) params.set("cursor", pageParam);
+      return request<ReviewPage>(`/api/reviews?${params}`);
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 }
 
 export function useManagerReviews() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["reviews", "manager"],
-    queryFn: () => request<ReviewWithUser[]>("/api/reviews"),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (pageParam) params.set("cursor", pageParam);
+      return request<ReviewPage>(`/api/reviews?${params}`);
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 }
 

@@ -5,10 +5,14 @@ import { reviewInputSchema } from "@/features/reviews/validations/review.schema"
 import { saveGeneratedReview } from "@/features/reviews/actions/review.service";
 import { getAIProvider, parseAIJson } from "@/services/ai/provider";
 import { REVIEW_SYSTEM, reviewPrompt } from "@/features/ai/prompts";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
+    const rateLimit = await enforceRateLimit("ai-user", user.id);
+    if (rateLimit) return rateLimit;
+
     const body = parseBody(reviewInputSchema, await request.json());
 
     const provider = getAIProvider();

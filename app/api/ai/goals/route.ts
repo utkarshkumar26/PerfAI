@@ -5,10 +5,14 @@ import { aiGoalSuggestionSchema } from "@/features/goals/validations/goal.schema
 import { getAIProvider, parseAIJson } from "@/services/ai/provider";
 import { GOALS_SYSTEM, goalSuggestionsPrompt } from "@/features/ai/prompts";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
+    const rateLimit = await enforceRateLimit("ai-user", user.id);
+    if (rateLimit) return rateLimit;
+
     const body = parseBody(aiGoalSuggestionSchema, await request.json());
 
     const provider = getAIProvider();

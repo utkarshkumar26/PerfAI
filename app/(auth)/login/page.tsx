@@ -11,7 +11,8 @@ export default function LoginPage() {
           PerfAI
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          AI Performance Review &amp; Career Assistant
+          Generate task descriptions, solve problems &amp; write reviews with{" "}
+          <span className="font-semibold text-primary">AI.</span>
         </p>
       </div>
       <LoginForm />

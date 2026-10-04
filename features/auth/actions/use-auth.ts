@@ -23,9 +23,27 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error ?? "Request failed");
+    throw new ApiRequestError(json.error ?? "Request failed", {
+      attemptsRemaining: json.attemptsRemaining,
+      locked: json.locked,
+      retryAfterSeconds: json.retryAfterSeconds,
+    });
   }
   return json.data as T;
+}
+
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly details: {
+      attemptsRemaining?: number;
+      locked?: boolean;
+      retryAfterSeconds?: number;
+    } = {}
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
 }
 
 export function useSession() {
