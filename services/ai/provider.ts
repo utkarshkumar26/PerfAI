@@ -76,7 +76,7 @@ class GeminiProvider implements AIProvider {
   readonly name = "gemini";
   private get model() {
     const m = env.AI_MODEL;
-    return m && m.startsWith("gemini") ? m : "gemini-2.5-flash";
+    return m && m.startsWith("gemini") ? m : "gemini-3.5-flash-lite";
   }
   private get apiKey() {
     return env.GEMINI_API_KEY;
